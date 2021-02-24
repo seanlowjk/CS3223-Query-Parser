@@ -1,3 +1,13 @@
 # Java Classes
 /classes 
 
+# Intellij Files
+.project
+.idea 
+
+# Generated Files
+*.md
+*.stat 
+*.txt
+*.tbl
+*.out
