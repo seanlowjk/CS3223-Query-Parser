@@ -1,2 +1,14 @@
+# Irrelevant Files 
 .project
 .classpath
+.idea 
+
+# Other file extensions 
+*.det
+*.sql
+*.md 
+*.stat
+*.txt
+*.tbl
+*.out 
+*.iml
