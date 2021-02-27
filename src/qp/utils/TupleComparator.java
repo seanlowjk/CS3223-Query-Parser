@@ -26,16 +26,13 @@ public class TupleComparator implements Comparator<Tuple> {
     @Override
     public int compare(Tuple tuple, Tuple other) {
         for (int i = 0; i < numberOfAttributes; i++) {
-            int comparisonMultipler = -AttributeDirection.DESC_MULTIPLER;
-
             AttributeDirection attributeDirection = attributeDirections.get(i);
-            if (attributeDirection.isAscending()) {
-                comparisonMultipler = AttributeDirection.ASC_MULTIPLER;
-            }
+            int comparisonMultipler = attributeDirection.getComparisonMultiplier();
 
             Attribute sortingAttribute = attributeDirection.getAttribute();
             int attributeIndex = schema.indexOf(sortingAttribute);
             assert attributeIndex != -1 : throwAttributeMissingError(sortingAttribute);
+            
             int comparisonResult = Tuple.compareTuples(tuple, other, attributeIndex);
             if (comparisonResult != 0) {
                 return comparisonMultipler * comparisonResult;

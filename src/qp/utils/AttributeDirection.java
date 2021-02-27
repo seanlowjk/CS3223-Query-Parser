@@ -17,7 +17,11 @@ public class AttributeDirection {
         return this.attribute;
     }
 
-    public boolean isAscending() {
-        return this.direction.isAscending();
+    public int getComparisonMultiplier() {
+        if (this.direction.isAscending()) {
+            return AttributeDirection.ASC_MULTIPLER;
+        }
+
+        return AttributeDirection.DESC_MULTIPLER;
     }
 }
