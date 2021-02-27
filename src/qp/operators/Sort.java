@@ -23,6 +23,8 @@ public class Sort extends Operator {
     private int roundNumber;
     private int fileNumber;
 
+    private ObjectInputStream inputStream;
+
     public Sort(Operator op, List<AttributeDirection> attributeDirections, int numberOfBuffers, int type) {
         super(type);
         this.op = op;
@@ -33,16 +35,50 @@ public class Sort extends Operator {
         this.comparator = new TupleComparator(op.getSchema(), this.attributeDirections);
         this.roundNumber = 0;
         this.fileNumber = 0;
+        this.inputStream = null;
     }
 
     @Override
     public boolean open() {
+        if (!op.open()) {
+            return false;
+        }
+
         int tupleSize = schema.getTupleSize();
         int batchSize = Batch.getPageSize() / tupleSize;
         generateSortedRuns(batchSize);
         mergeSortedRuns(batchSize);
+        return retrieveInputStream();
+    }
 
-        return true;
+    @Override
+    public Batch next() {
+        return BatchUtils.readBatch(inputStream);
+    }
+
+    @Override
+    public boolean close() {
+        for (File originalRun : sortedRunsFiles) {
+            originalRun.delete();
+        }
+
+        return super.close();
+    }
+
+    /**
+     * Sets the input stream for the next() operator to call on.
+     * Returns true if there are any errors, false otherwise. 
+     */
+    private boolean retrieveInputStream() {
+        try {
+            File mergedSortedRun = sortedRunsFiles.get(0);
+            FileInputStream fileInputStream = new FileInputStream(mergedSortedRun);
+            ObjectInputStream generatedInputStream = new ObjectInputStream(fileInputStream);
+            this.inputStream = generatedInputStream;
+            return true;
+        } catch (Exception exception) {
+            return false;
+        }
     }
 
     /**
