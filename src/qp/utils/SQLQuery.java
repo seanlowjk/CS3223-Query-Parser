@@ -105,17 +105,31 @@ public class SQLQuery {
         return groupbyList;
     }
 
-    public void setOrderByList(ArrayList<Attribute> list) { orderbyList = list; }
+    public void setOrderByList(ArrayList<Attribute> list) { 
+        orderbyList = list; 
+    }
 
-    public ArrayList<Attribute> getOrderByList() { return orderbyList; }
+    public ArrayList<Attribute> getOrderByList() { 
+        return orderbyList; 
+    }
 
-    public void setDescendingOrder() { isDescending = true; }
+    public void setDescendingOrder() { 
+        isDescending = true; 
+    }
 
-    public boolean isDescending() { return isDescending; }
+    public boolean isDescending() { 
+        return isDescending; 
+    }
 
     public int getNumJoin() {
         if (joinList == null)
             return 0;
         return joinList.size();
+    }
+
+    public int getNumOrder() {
+        if (orderbyList == null)
+            return 0;
+        return orderbyList.size();
     }
 }

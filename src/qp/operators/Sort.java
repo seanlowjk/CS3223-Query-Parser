@@ -13,7 +13,7 @@ import java.util.Collections;
 import java.util.List;
 
 public class Sort extends Operator {
-    private static final String FILE_HEADER = "EStemp";
+    private static final String FILE_HEADER = "Stemp";
 
     private Operator base;
     private List<AttributeDirection> attributeDirections;
