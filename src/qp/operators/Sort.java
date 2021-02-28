@@ -3,6 +3,7 @@ package qp.operators;
 import qp.utils.AttributeDirection;
 import qp.utils.Batch;
 import qp.utils.BatchUtils;
+import qp.utils.Schema;
 import qp.utils.Tuple;
 import qp.utils.TupleComparator;
 
@@ -14,9 +15,10 @@ import java.util.List;
 public class Sort extends Operator {
     private static final String FILE_HEADER = "EStemp";
 
-    private Operator op;
+    private Operator base;
     private List<AttributeDirection> attributeDirections;
     private int numberOfBuffers;
+    private int numberOfPages; 
 
     private List<File> sortedRunsFiles;
     private TupleComparator comparator;
@@ -25,14 +27,15 @@ public class Sort extends Operator {
 
     private ObjectInputStream inputStream;
 
-    public Sort(Operator op, List<AttributeDirection> attributeDirections, int numberOfBuffers, int type) {
+    public Sort(Operator base, List<AttributeDirection> attributeDirections, int numberOfBuffers, int type) {
         super(type);
-        this.op = op;
+        this.base = base;
         this.attributeDirections = attributeDirections;
         this.numberOfBuffers = numberOfBuffers;
 
+        this.numberOfPages = 0;
         this.sortedRunsFiles = new ArrayList<>();
-        this.comparator = new TupleComparator(op.getSchema(), this.attributeDirections);
+        this.comparator = new TupleComparator(base.getSchema(), this.attributeDirections);
         this.roundNumber = 0;
         this.fileNumber = 0;
         this.inputStream = null;
@@ -40,7 +43,7 @@ public class Sort extends Operator {
 
     @Override
     public boolean open() {
-        if (!op.open()) {
+        if (!base.open()) {
             return false;
         }
 
@@ -63,6 +66,45 @@ public class Sort extends Operator {
         }
 
         return super.close();
+    }
+
+    @Override
+    public int getOpType() {
+        return super.getOpType();
+    }
+
+    @Override
+    public void setSchema(Schema schema) {
+        super.setSchema(schema);
+    }
+
+    @Override
+    public Object clone() {
+        Operator clone = (Operator) base.clone();
+        Sort newSort = new Sort(clone, attributeDirections, numberOfBuffers, getOpType());
+        newSort.setSchema((Schema) schema.clone());
+        return newSort;
+    }
+
+    public Operator getBase() {
+        return base;
+    }
+
+    public void setBase(Operator base) {
+        this.base = base;
+    }
+    
+    public int calculateTotalIOCost() {
+        return 2 * numberOfPages + calculateNumberOfPasses();
+    }
+
+    /**
+     * Given formula from the CS3223 Lecture
+     */
+    private int calculateNumberOfPasses() {
+        double numberOfOriginalSortedRuns = Math.ceil(numberOfPages / (1.0 * numberOfBuffers));
+        int numPasses = 1 + (int) Math.ceil(Math.log(numberOfOriginalSortedRuns) / Math.log(numberOfPages -1));
+        return numPasses;
     }
 
     /**
@@ -88,13 +130,13 @@ public class Sort extends Operator {
      * @param batchSize the size of the page given.  
      */
     private void generateSortedRuns(int batchSize) {
-        Batch nextRun = op.next();
+        Batch nextRun = base.next();
         while (nextRun != null) {
             List<Batch> initialRuns = new ArrayList<>();
             int numberOfBuffersUsed = 0;
             while (numberOfBuffersUsed < numberOfBuffers && nextRun != null) {
                 initialRuns.add(nextRun);
-                nextRun = op.next();
+                nextRun = base.next();
                 numberOfBuffersUsed++;
             }
 
@@ -105,6 +147,8 @@ public class Sort extends Operator {
             File sortedRunsFile = writeSortedRuns(sortedRuns);
             sortedRunsFiles.add(sortedRunsFile);
         }
+
+        numberOfPages = sortedRunsFiles.size() * numberOfBuffers;
 
         gotoNextRound();
     }

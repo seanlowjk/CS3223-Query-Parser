@@ -68,10 +68,11 @@ public class RandomInitialPlan {
         if (numJoin != 0) {
             createJoinOp();
         }
+        createProjectOp();
+
         if (orderByList.size() > 0) {
             createOrderByOp();
         }
-        createProjectOp();
 
         return root;
     }
@@ -197,7 +198,7 @@ public class RandomInitialPlan {
 
     public void createOrderByOp() {
         Operator base = root;
-        root = new OrderBy(base, orderByList, BufferManager.getNumberOfBuffers(), isDescending);
+        root = OrderBy.createOperator(base, orderByList, BufferManager.getNumberOfBuffers(), isDescending);
         Schema newSchema = base.getSchema();
         root.setSchema(newSchema);
     }
