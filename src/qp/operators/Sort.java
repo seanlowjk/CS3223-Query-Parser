@@ -163,7 +163,7 @@ public class Sort extends Operator {
         List<Tuple> tuples = new ArrayList<>();
         List<Batch> sortedRuns = new ArrayList<>();
         for (Batch batch : initialRuns) {
-            for (int i = 0; i < initialRuns.size(); i++) {
+            for (int i = 0; i < batch.size(); i++) {
                 Tuple batchTuple = batch.get(i);
                 tuples.add(batchTuple);
             }
@@ -256,8 +256,6 @@ public class Sort extends Operator {
         }
 
         Batch outputBuffer = new Batch(batchSize);
-
-
         File outputBufferFile = combineInputBuffers(inputStreams, inputBuffers, 
             numberOfAvailableBuffers, outputBuffer);
 
