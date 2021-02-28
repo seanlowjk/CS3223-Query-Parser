@@ -6,12 +6,24 @@
 
 package qp.operators;
 
+import qp.utils.Attribute;
 import qp.utils.AttributeDirection;
+import qp.utils.OrderDirection;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class OrderBy extends Sort {
-    public OrderBy(Operator op, List<AttributeDirection> attributeDirections, int numberOfBuffers) {
-        super(op, attributeDirections, numberOfBuffers, OpType.SORT);
+    public OrderBy(Operator op, List<Attribute> attributes, int numberOfBuffers, boolean isDescending) {
+        super(op, getAttributeDirections(attributes, isDescending), numberOfBuffers, OpType.SORT);
+    }
+
+    private static List<AttributeDirection> getAttributeDirections(List<Attribute> attributes, boolean isDescending) {
+        List<AttributeDirection> attributeDirections = new ArrayList<>();
+        OrderDirection direction = OrderDirection.getOrderDirection(isDescending);
+        for (Attribute attribute : attributes) {
+            attributeDirections.add(new AttributeDirection(attribute, direction));
+        }
+        return attributeDirections;
     }
 }

@@ -20,4 +20,12 @@ public enum OrderDirection {
     };
 
     public abstract boolean isAscending();
+
+    public static OrderDirection getOrderDirection(boolean isDescending) {
+        if (isDescending) {
+            return OrderDirection.DESC;
+        } else {
+            return OrderDirection.ASC;
+        }
+    }
 }
