@@ -154,7 +154,6 @@ public class Sort extends Operator {
         }
 
         numberOfPages = sortedRunsFiles.size() * numberOfBuffers;
-
         gotoNextRound();
     }
 
@@ -206,7 +205,6 @@ public class Sort extends Operator {
         // Condition to check if more merging is needed before producing a full sorted run. 
         while (sortedRunsFiles.size() > 1) {
             List<File> sortedRuns = new ArrayList<>();
-
             int round = 0;
 
             // Condition where the merging of sorted runs should end only if 
@@ -238,6 +236,7 @@ public class Sort extends Operator {
             for (File originalRun : sortedRunsFiles) {
                 originalRun.delete();
             }
+
             sortedRunsFiles = sortedRuns;
         }
     }
@@ -382,10 +381,8 @@ public class Sort extends Operator {
 
             return sortedRunsFile;
         } catch (IOException exception) {
-            System.out.println(exception);
+            return null;
         }
-
-        return null;
     }
 
     /**
