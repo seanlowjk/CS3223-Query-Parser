@@ -17,7 +17,8 @@ public class Sort extends Operator {
     private static final String FILE_HEADER = "Stemp";
 
     private Operator base;
-    private List<AttributeDirection> attributeDirections;
+    private List<Attribute> attributes;
+    private boolean isDescending;
     private int numberOfBuffers;
     private int numberOfPages; 
 
@@ -32,28 +33,6 @@ public class Sort extends Operator {
      * Creates the operator which represents the logic for Sorting. 
      * The main algorithm used here is external sorting. 
      * @param base the base operator. 
-     * @param attributeDirections the attributes to compare by and their directions.  
-     * @param isDescending whether the tuples should be compared in descending order or not. 
-     * @param type the type of operator used. 
-     */
-    private Sort(Operator base, List<AttributeDirection> attributeDirections, int numberOfBuffers, int type) {
-        super(type);
-        this.base = base;
-        this.attributeDirections = attributeDirections;
-        this.numberOfBuffers = numberOfBuffers;
-
-        this.numberOfPages = 0;
-        this.sortedRunsFiles = new ArrayList<>();
-        this.comparator = new TupleComparator(base.getSchema(), this.attributeDirections);
-        this.roundNumber = 0;
-        this.fileNumber = 0;
-        this.inputStream = null;
-    }
-
-    /**
-     * Creates the operator which represents the logic for Sorting. 
-     * The main algorithm used here is external sorting. 
-     * @param base the base operator. 
      * @param attributes the attributes to compare by.
      * @param numberOfBuffers the number of buffers given for sorting. 
      * @param isDescending whether the tuples should be compared in descending order or not. 
@@ -62,12 +41,14 @@ public class Sort extends Operator {
     public Sort(Operator base, List<Attribute> attributes, int numberOfBuffers, boolean isDescending, int type) {
         super(type);
         this.base = base;
-        this.attributeDirections = AttributeDirection.getAttributeDirections(attributes, isDescending);
+        this.attributes = attributes;
+        this.isDescending = isDescending;
         this.numberOfBuffers = numberOfBuffers;
 
         this.numberOfPages = 0;
         this.sortedRunsFiles = new ArrayList<>();
-        this.comparator = new TupleComparator(base.getSchema(), this.attributeDirections);
+        this.comparator = new TupleComparator(base.getSchema(), 
+            AttributeDirection.getAttributeDirections(attributes, isDescending));
         this.roundNumber = 0;
         this.fileNumber = 0;
         this.inputStream = null;
@@ -113,7 +94,7 @@ public class Sort extends Operator {
     @Override
     public Object clone() {
         Operator clone = (Operator) base.clone();
-        Sort newSort = new Sort(clone, attributeDirections, numberOfBuffers, getOpType());
+        Sort newSort = new Sort(clone, attributes, numberOfBuffers, isDescending, getOpType());
         newSort.setSchema((Schema) schema.clone());
         return newSort;
     }
