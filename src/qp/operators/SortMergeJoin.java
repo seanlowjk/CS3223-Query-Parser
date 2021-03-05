@@ -12,7 +12,7 @@ import java.util.List;
 public class SortMergeJoin extends Join {
     private static final String FILE_HEADER = "SMtemp";
 
-    private List<File> sortedRunsFiles;
+    private List<File> mergedRunsFiles;
     private int fileNumber;
 
     private int batchSize;
@@ -36,6 +36,8 @@ public class SortMergeJoin extends Join {
         schema = jn.getSchema();
         jointype = jn.getJoinType();
         numBuff = jn.getNumBuff();
+
+        
     }
 
     private static Sort getSortOperator(Operator base, Join jn) {
