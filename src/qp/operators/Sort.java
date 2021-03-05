@@ -28,7 +28,7 @@ public class Sort extends Operator {
 
     private ObjectInputStream inputStream;
 
-        /**
+    /**
      * Creates the operator which represents the logic for Sorting. 
      * The main algorithm used here is external sorting. 
      * @param base the base operator. 
