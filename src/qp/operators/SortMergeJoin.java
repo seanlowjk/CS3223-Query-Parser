@@ -30,9 +30,23 @@ public class SortMergeJoin extends Join {
     private ObjectInputStream inputStream;
 
     public SortMergeJoin(Join jn) {
-        super(jn.getLeft(), jn.getRight(), jn.getConditionList(), jn.getOpType());
+        super(getSortOperator(jn.getLeft(), jn), 
+            getSortOperator(jn.getRight(), jn), 
+            jn.getConditionList(), jn.getOpType());
         schema = jn.getSchema();
         jointype = jn.getJoinType();
         numBuff = jn.getNumBuff();
+    }
+
+    private static Sort getSortOperator(Operator base, Join jn) {
+        List<Condition> conditions = jn.getConditionList();
+        List<Attribute> attributes = new ArrayList<>();
+        for (Condition condition : conditions) {
+            attributes.add(condition.getLhs());
+        }
+        int numBuff = jn.getNumBuff();
+        boolean isDescending = false; 
+        int opType = OpType.SORT;
+        return new Sort(base, attributes, numBuff, isDescending, opType);
     }
 }
