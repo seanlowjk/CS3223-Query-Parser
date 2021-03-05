@@ -37,7 +37,29 @@ public class SortMergeJoin extends Join {
         jointype = jn.getJoinType();
         numBuff = jn.getNumBuff();
 
-        
+        mergedRunsFiles = new ArrayList<>();
+        fileNumber = 0;
+
+        int tuplesize = schema.getTupleSize();
+        batchSize = Batch.getPageSize() / tuplesize;
+        leftAttrIndexes = new ArrayList<>();
+        rightAttrIndexes = new ArrayList<>();
+        for (Condition con : conditionList) {
+            Attribute leftattr = con.getLhs();
+            Attribute rightattr = (Attribute) con.getRhs();
+            leftAttrIndexes.add(left.getSchema().indexOf(leftattr));
+            rightAttrIndexes.add(right.getSchema().indexOf(rightattr));
+        }
+
+        leftBatch = null;
+        rightBatch = null;
+
+        leftPointer = 0;
+        rightPointer = 0;
+        isEndOfLeftStream = false;
+        isEndOfRightStream = false;
+
+        inputStream = null;
     }
 
     private static Sort getSortOperator(Operator base, Join jn) {
