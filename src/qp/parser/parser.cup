@@ -36,7 +36,7 @@ action code {:
 terminal TokenValue ID;
 terminal COMMA,LEFTBRACKET,RIGHTBRACKET,DOT,STAR;
 terminal LESSTHAN,GREATERTHAN,LTOE,GTOE,EQUAL,NOTEQUAL;
-terminal SELECT,FROM,WHERE,GROUPBY,ORDERBY,MAX,MIN,SUM,COUNT,AVG,DISTINCT;
+terminal SELECT,FROM,WHERE,GROUPBY,ORDERBY,MAX,MIN,SUM,COUNT,AVG,DISTINCT,DESC;
 terminal TokenValue STRINGLIT;
 
 /* Non terminals */
@@ -67,10 +67,25 @@ finalquery ::= sqlquery:s
             parser.query = s;
             RESULT = s;
         :}
+		|  sqlquery:s ORDERBY attlist:a DESC
+        {:
+            s.setOrderByList(a);
+			s.setDescendingOrder();
+            parser.query = s;
+            RESULT = s;
+        :}
         | sqlquery:s GROUPBY attlist:a ORDERBY attlist:b
         {:
             s.setGroupByList(a);
             s.setOrderByList(b);
+            parser.query = s;
+            RESULT = s;
+        :}
+		| sqlquery:s GROUPBY attlist:a ORDERBY attlist:b DESC
+        {:
+            s.setGroupByList(a);
+            s.setOrderByList(b);
+			s.setDescendingOrder();
             parser.query = s;
             RESULT = s;
         :}
