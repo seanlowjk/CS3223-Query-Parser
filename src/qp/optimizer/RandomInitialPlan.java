@@ -198,7 +198,7 @@ public class RandomInitialPlan {
 
     public void createOrderByOp() {
         Operator base = root;
-        root = OrderBy.createOperator(base, orderByList, BufferManager.getNumberOfBuffers(), isDescending);
+        root = new Sort(base, orderByList, BufferManager.getNumberOfBuffers(), isDescending, OpType.SORT);
         Schema newSchema = base.getSchema();
         root.setSchema(newSchema);
     }
