@@ -62,6 +62,25 @@ public class SortMergeJoin extends Join {
         inputStream = null;
     }
 
+    @Override
+    public boolean open() {
+        if (!left.open() || !right.open()) {
+            return false;
+        }
+
+        return true; 
+    }
+
+    @Override
+    public Batch next() {
+        return null;
+    }
+
+    @Override
+    public boolean close() {
+        return true;
+    }
+
     private static Sort getSortOperator(Operator base, Join jn) {
         List<Condition> conditions = jn.getConditionList();
         List<Attribute> attributes = new ArrayList<>();
