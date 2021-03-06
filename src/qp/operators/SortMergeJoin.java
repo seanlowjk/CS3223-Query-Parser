@@ -65,17 +65,70 @@ public class SortMergeJoin extends Join {
         }
 
         file = getRelationBatches(right);
-
+        readNextLeftBatch();
         return true; 
     }
 
     @Override
     public Batch next() {
-        return null;
+        if (isEndOfLeftStream) {
+            return null;
+        }
+
+        return getNextBatch();
     }
 
     @Override
     public boolean close() {
+        return true;
+    }
+
+    private Batch getNextBatch() {
+        Batch nextBatch = new Batch(batchSize);
+        if (!hasInitializedInputStream()) {
+            return null; 
+        }
+
+        readNextRightBatch();
+        while (!nextBatch.isFull()) {
+            
+        }
+
+        return null;
+    }
+
+    private void readNextLeftBatch() {
+        if (leftBatch == null) {
+            leftBatch = left.next();
+        }
+
+        if (leftBatch == null) {
+            isEndOfLeftStream = true; 
+        }
+    }
+
+    private void readNextRightBatch() {
+        if (rightBatch == null) {
+            rightBatch = right.next();
+        }
+
+        if (rightBatch == null) {
+            isEndOfRightStream = true; 
+        }
+    }
+
+    private boolean hasInitializedInputStream() {
+        if (inputStream == null) {
+            try {
+                FileInputStream fileInputStream = new FileInputStream(file);
+                inputStream = new ObjectInputStream(fileInputStream);
+                isEndOfRightStream = false;
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
+        }
+
         return true;
     }
 
