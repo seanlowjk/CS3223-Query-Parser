@@ -49,6 +49,30 @@ public class BatchUtils {
     }
 
     /**
+     * Appends a list of runs runs to a given file. 
+     * @param runs the list of runs given. 
+     * @param file the file the runs are appended to. 
+     */
+    public static File appendRuns(List<Batch> runs, File file) {
+        if (file == null) {
+            return null;
+        }
+
+        try {
+            FileOutputStream fileOutputStream = new FileOutputStream(file, true);
+            ObjectOutputStream outputStream = new ObjectOutputStream(fileOutputStream);
+            for (Batch run : runs) {
+                outputStream.writeObject(run);
+            }
+            outputStream.close();
+
+            return file;
+        } catch (IOException exception) {
+            return null;
+        }
+    }
+
+    /**
      * Writes a list of runs into a new file. 
      * @param runs the list of runs given. 
      */

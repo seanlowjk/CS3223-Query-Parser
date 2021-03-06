@@ -341,44 +341,29 @@ public class Sort extends Operator {
             if (outputBuffer.isFull()) {
                 List<Batch> outputBuffers = new ArrayList<>();
                 outputBuffers.add(outputBuffer);
-                outputBufferFile = appendSortedRuns(outputBuffers, outputBufferFile);
+
+                if (outputBufferFile == null) {
+                    String filename = String.format("%s-%d-%d", FILE_HEADER, roundNumber, fileNumber);
+                    outputBufferFile = new File(filename);
+                    fileNumber ++;
+                }
+                outputBufferFile = BatchUtils.appendRuns(outputBuffers, outputBufferFile);
             }
         }
 
         if (!outputBuffer.isEmpty()) {
             List<Batch> outputBuffers = new ArrayList<>();
             outputBuffers.add(outputBuffer);
-            outputBufferFile = appendSortedRuns(outputBuffers, outputBufferFile);
+
+            if (outputBufferFile == null) {
+                String filename = String.format("%s-%d-%d", FILE_HEADER, roundNumber, fileNumber);
+                outputBufferFile = new File(filename);
+                fileNumber ++;
+            }
+            outputBufferFile = BatchUtils.appendRuns(outputBuffers, outputBufferFile);
         }
         
         return outputBufferFile;
-    }
-
-    /**
-     * Appends a list of sorted runs to a given file. 
-     * @param sortedRuns the list of sorted runs given. 
-     * @param file the file the sorted runs are appended to. 
-     */
-    private File appendSortedRuns(List<Batch> sortedRuns, File file) {
-        if (file == null) {
-            String filename = String.format("%s-%d-%d", FILE_HEADER, roundNumber, fileNumber);
-            File sortedRunsFile = BatchUtils.writeRuns(sortedRuns, filename);
-            fileNumber ++;
-            return sortedRunsFile; 
-        }
-
-        try {
-            FileOutputStream fileOutputStream = new FileOutputStream(file, true);
-            ObjectOutputStream outputStream = new ObjectOutputStream(fileOutputStream);
-            for (Batch batch : sortedRuns) {
-                outputStream.writeObject(batch);
-            }
-            outputStream.close();
-
-            return file;
-        } catch (IOException exception) {
-            return null;
-        }
     }
 
     /**
