@@ -28,8 +28,7 @@ public class SortMergeJoin extends Join {
     private ObjectInputStream inputStream;
 
     public SortMergeJoin(Join jn) {
-        super(getSortOperator(jn.getLeft(), jn), 
-            getSortOperator(jn.getRight(), jn), 
+        super(jn.getLeft(), jn.getRight(),  
             jn.getConditionList(), jn.getOpType());
         schema = jn.getSchema();
         jointype = jn.getJoinType();
@@ -188,15 +187,21 @@ public class SortMergeJoin extends Join {
         }
     }
 
-    private static Sort getSortOperator(Operator base, Join jn) {
+    public static Sort getSortOperator(Operator base, Join jn, boolean isLeft) {
         List<Condition> conditions = jn.getConditionList();
         List<Attribute> attributes = new ArrayList<>();
         for (Condition condition : conditions) {
-            attributes.add(condition.getLhs());
+            if (isLeft) {
+                attributes.add(condition.getLhs());
+            } else {
+                attributes.add((Attribute) condition.getRhs());
+            }
         }
         int numBuff = jn.getNumBuff();
         boolean isDescending = false; 
         int opType = OpType.SORT;
-        return new Sort(base, attributes, numBuff, isDescending, opType);
+        Sort newSort = new Sort(base, attributes, numBuff, isDescending, opType);
+        newSort.setSchema(base.getSchema());
+        return newSort;
     }
 }
