@@ -81,6 +81,10 @@ public class SortMergeJoin extends Join {
     @Override
     public boolean close() {
         file.delete();
+
+        if (!left.close() || !right.close()) {
+            return false;
+        }
         return true;
     }
 
