@@ -88,13 +88,43 @@ public class SortMergeJoin extends Join {
         if (!hasInitializedInputStream()) {
             return null; 
         }
-
         readNextRightBatch();
+
         while (!nextBatch.isFull()) {
-            
+            Tuple leftTuple = leftBatch.get(leftPointer);
+            Tuple rightTuple = rightBatch.get(rightPointer);
+            int comparisonResult = Tuple.compareTuples(leftTuple, rightTuple, 
+                leftAttrIndexes, rightAttrIndexes);
+            if (comparisonResult < 0) {
+                hasInitializedInputStream();
+                readNextLeftTuple();
+            } else {
+                if (comparisonResult == 0) {
+                    Tuple resultTuple = leftTuple.joinWith(rightTuple);
+                    nextBatch.add(resultTuple);
+                }
+
+                readNextRightTuple();
+                if (isEndOfRightStream) {
+                    hasInitializedInputStream();
+                    readNextLeftTuple(); 
+                    readNextRightBatch();
+                }
+                if (isEndOfLeftStream) {
+                    break; 
+                }
+            }
         }
 
-        return null;
+        return nextBatch;
+    }
+
+    private void readNextLeftTuple() {
+        leftPointer ++;
+        if (leftPointer >= leftBatch.size()) {
+            readNextLeftBatch();
+            leftPointer = 0;
+        }
     }
 
     private void readNextLeftBatch() {
@@ -104,6 +134,14 @@ public class SortMergeJoin extends Join {
 
         if (leftBatch == null) {
             isEndOfLeftStream = true; 
+        }
+    }
+
+    private void readNextRightTuple() {
+        rightPointer ++;
+        if (rightPointer >= rightBatch.size()) {
+            readNextRightBatch();
+            rightPointer = 0;
         }
     }
 
