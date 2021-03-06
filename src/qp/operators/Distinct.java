@@ -195,10 +195,9 @@ public class Distinct extends Operator {
         // Use B - 1 buffer pages for input and 1 buffer page for output
         int numberOfAvailableBuffers = numberOfBuffers - 1;
         int roundNum = 0;
-        boolean finalRun = false;
         ArrayList<File> sortedRunsFiles = new ArrayList<>(sortedRuns);
 
-        while (sortedRunsFiles.size() > 1 || roundNum == 0 || finalRun) {
+        while (sortedRunsFiles.size() > 1 || roundNum == 0) {
             ArrayList<File> newSortedRunsFiles = new ArrayList<>();
             ArrayList<Batch> interimBuffer = new ArrayList<>();
             Batch outputBatch = new Batch(batchSize);
@@ -206,6 +205,7 @@ public class Distinct extends Operator {
             List<ObjectInputStream> sortedRunsOIS = BatchUtils.createInputStreams(sortedRunsFiles);
             int maxPages = Math.min(sortedRunsFiles.size(), numberOfAvailableBuffers);
             int roundParts = (int) Math.ceil(sortedRunsFiles.size() / maxPages);
+            System.out.println(maxPages);
 
             for (int i = 0; i < roundParts; i++) {
                 int[] interimBufferPointers = new int[maxPages];
@@ -252,7 +252,20 @@ public class Distinct extends Operator {
                         Tuple currTuple = currBatch.get(interimBufferPointers[j]);
 
                         // Check and discard current tuple if it is a duplicate
-                        while (outputBatch.size() > 0 && this.comparator.compare(outputBatch.get(outputBatch.size() - 1), currTuple) == 0) {
+                        while (outputBatch.size() > 0) {
+                            boolean isDuplicate = false;
+
+                            for (int k = 0; k < outputBatch.size(); k++) {
+                                if (this.comparator.compare(outputBatch.get(k), currTuple) == 0) {
+                                    isDuplicate = true;
+                                    break;
+                                }
+                            }
+
+                            if (!isDuplicate) {
+                                break;
+                            }
+
                             interimBufferPointers[j]++;
 
                             // Exit if current batch is exhausted
@@ -286,6 +299,7 @@ public class Distinct extends Operator {
                 }
 
                 newSortedRunsFiles.add(roundPartFile);
+                interimBuffer = new ArrayList<>();
             }
 
             // Delete the original set of files
@@ -295,14 +309,6 @@ public class Distinct extends Operator {
 
             sortedRunsFiles = newSortedRunsFiles;
             roundNum++;
-
-            // Force a final run
-            // TODO: See why there are still duplicates
-            if (finalRun) {
-                finalRun = false;
-            } else if (sortedRunsFiles.size() == 1 && !finalRun) {
-                finalRun = true;
-            }
         }
 
         // There should only be one run by now
