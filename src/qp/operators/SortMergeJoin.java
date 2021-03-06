@@ -81,6 +81,7 @@ public class SortMergeJoin extends Join {
 
     @Override
     public boolean close() {
+        file.delete();
         return true;
     }
 
@@ -102,19 +103,24 @@ public class SortMergeJoin extends Join {
             if (comparisonResult < 0) {
                 hasInitializedInputStream();
                 readNextLeftTuple();
+                if (isEndOfLeftStream) {
+                    return nextBatch; 
+                }
             } else {
                 if (comparisonResult == 0) {
                     Tuple resultTuple = leftTuple.joinWith(rightTuple);
                     nextBatch.add(resultTuple);
                 }
+
                 readNextRightTuple();
                 if (isEndOfRightStream) {
-                    hasInitializedInputStream();
                     readNextLeftTuple(); 
+                    if (isEndOfLeftStream) {
+                        return nextBatch; 
+                    }
+
+                    hasInitializedInputStream();
                     readNextRightBatch();
-                }
-                if (isEndOfLeftStream) {
-                    break; 
                 }
             }
         }
@@ -131,11 +137,9 @@ public class SortMergeJoin extends Join {
     }
 
     private void readNextLeftBatch() {
-        if (leftBatch == null) {
-            leftBatch = left.next();
-        }
+        leftBatch = left.next();
 
-        if (leftBatch == null) {
+        if (leftBatch == null || leftBatch.size() == 0) {
             isEndOfLeftStream = true; 
         }
     }
@@ -149,34 +153,32 @@ public class SortMergeJoin extends Join {
     }
 
     private void readNextRightBatch() {
-        if (rightBatch == null) {
-            rightBatch = right.next();
+        try {
+            rightBatch = (Batch) inputStream.readObject();
+        } catch (Exception e) {
+            rightBatch = null;
         }
 
-        if (rightBatch == null) {
+        if (rightBatch == null || rightBatch.size() == 0) {
             isEndOfRightStream = true; 
         }
     }
 
     private boolean hasInitializedInputStream() {
-        if (inputStream == null) {
-            try {
-                FileInputStream fileInputStream = new FileInputStream(file);
-                inputStream = new ObjectInputStream(fileInputStream);
-                isEndOfRightStream = false;
-                return true;
-            } catch (Exception e) {
-                return false;
-            }
+        try {
+            FileInputStream fileInputStream = new FileInputStream(file);
+            inputStream = new ObjectInputStream(fileInputStream);
+            isEndOfRightStream = false;
+            return true;
+        } catch (Exception e) {
+            return false;
         }
-
-        return true;
     }
 
     private File getRelationBatches(Operator op) {
         Batch batch;
         try {
-            File file = new File(FILE_HEADER);
+            file = new File(FILE_HEADER);
             FileOutputStream fileOutputStream = new FileOutputStream(file);
             ObjectOutputStream outputStream = new ObjectOutputStream(fileOutputStream);
             while ((batch = op.next()) != null) {
