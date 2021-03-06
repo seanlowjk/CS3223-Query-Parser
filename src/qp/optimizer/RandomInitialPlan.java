@@ -22,7 +22,7 @@ public class RandomInitialPlan {
     ArrayList<Condition> selectionlist;   // List of select conditons
     ArrayList<Condition> joinlist;        // List of join conditions
     ArrayList<Attribute> groupbylist;
-    ArrayList<Attribute> orderByList; 
+    ArrayList<Attribute> orderByList;
     boolean isDescending;
     int numJoin;            // Number of joins in this query
     HashMap<String, Operator> tab_op_hash;  // Table name to the Operator
@@ -52,11 +52,6 @@ public class RandomInitialPlan {
      **/
     public Operator prepareInitialPlan() {
 
-        if (sqlquery.isDistinct()) {
-            System.err.println("Distinct is not implemented.");
-            System.exit(1);
-        }
-
         if (sqlquery.getGroupByList().size() > 0) {
             System.err.println("GroupBy is not implemented.");
             System.exit(1);
@@ -69,6 +64,7 @@ public class RandomInitialPlan {
             createJoinOp();
         }
         createProjectOp();
+        createDistinctOp();
 
         if (orderByList.size() > 0) {
             createOrderByOp();
@@ -201,6 +197,19 @@ public class RandomInitialPlan {
         root = new Sort(base, orderByList, BufferManager.getNumberOfBuffers(), isDescending, OpType.SORT);
         Schema newSchema = base.getSchema();
         root.setSchema(newSchema);
+    }
+
+    /**
+     * Supports the use of the DISTINCT operator.
+     */
+    public void createDistinctOp() {
+        if (!sqlquery.isDistinct()) {
+            return;
+        }
+
+        Operator base = root;
+        root = new Distinct(root, sqlquery.getProjectList());
+        root.setSchema(base.getSchema());
     }
 
     private void modifyHashtable(Operator old, Operator newop) {
