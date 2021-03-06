@@ -88,7 +88,10 @@ public class SortMergeJoin extends Join {
         if (!hasInitializedInputStream()) {
             return null; 
         }
-        readNextRightBatch();
+
+        if (rightBatch == null) {
+            readNextRightBatch();
+        }
 
         while (!nextBatch.isFull()) {
             Tuple leftTuple = leftBatch.get(leftPointer);
@@ -103,7 +106,6 @@ public class SortMergeJoin extends Join {
                     Tuple resultTuple = leftTuple.joinWith(rightTuple);
                     nextBatch.add(resultTuple);
                 }
-
                 readNextRightTuple();
                 if (isEndOfRightStream) {
                     hasInitializedInputStream();
