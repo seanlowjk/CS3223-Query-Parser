@@ -47,4 +47,24 @@ public class BatchUtils {
 
         return inputStreams;
     }
+
+    /**
+     * Writes a list of runs into a new file. 
+     * @param runs the list of runs given. 
+     */
+    public static File writeRuns(List<Batch> runs, String filename) {
+        try {
+            File runsFile = new File(filename);
+            FileOutputStream fileOutputStream = new FileOutputStream(runsFile);
+            ObjectOutputStream outputStream = new ObjectOutputStream(fileOutputStream);
+            for (Batch run : runs) {
+                outputStream.writeObject(run);
+            }
+            outputStream.close();
+
+            return runsFile;
+        } catch (IOException exception) {
+            return null;
+        }
+    }
 }
