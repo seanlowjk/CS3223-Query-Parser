@@ -11,9 +11,7 @@ import java.util.List;
 
 public class SortMergeJoin extends Join {
     private static final String FILE_HEADER = "SMtemp";
-
-    private List<File> mergedRunsFiles;
-    private int fileNumber;
+    private File file;
 
     private int batchSize;
     private List<Integer> leftAttrIndexes;
@@ -37,9 +35,6 @@ public class SortMergeJoin extends Join {
         jointype = jn.getJoinType();
         numBuff = jn.getNumBuff();
 
-        mergedRunsFiles = new ArrayList<>();
-        fileNumber = 0;
-
         int tuplesize = schema.getTupleSize();
         batchSize = Batch.getPageSize() / tuplesize;
         leftAttrIndexes = new ArrayList<>();
@@ -51,6 +46,7 @@ public class SortMergeJoin extends Join {
             rightAttrIndexes.add(right.getSchema().indexOf(rightattr));
         }
 
+        file = null;
         leftBatch = null;
         rightBatch = null;
 
@@ -68,6 +64,8 @@ public class SortMergeJoin extends Join {
             return false;
         }
 
+        file = getRelationBatches(right);
+
         return true; 
     }
 
@@ -79,6 +77,22 @@ public class SortMergeJoin extends Join {
     @Override
     public boolean close() {
         return true;
+    }
+
+    private File getRelationBatches(Operator op) {
+        Batch batch;
+        try {
+            File file = new File(FILE_HEADER);
+            FileOutputStream fileOutputStream = new FileOutputStream(file);
+            ObjectOutputStream outputStream = new ObjectOutputStream(fileOutputStream);
+            while ((batch = op.next()) != null) {
+                outputStream.writeObject(batch);
+            }
+            outputStream.close();
+            return file;
+        } catch (IOException io) {
+            return null; 
+        }
     }
 
     private static Sort getSortOperator(Operator base, Join jn) {
