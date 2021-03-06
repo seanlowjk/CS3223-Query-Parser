@@ -91,10 +91,6 @@ public class SortMergeJoin extends Join {
             return null; 
         }
 
-        if (rightBatch == null) {
-            readNextRightBatch();
-        }
-
         while (!nextBatch.isFull()) {
             Tuple leftTuple = leftBatch.get(leftPointer);
             Tuple rightTuple = rightBatch.get(rightPointer);
@@ -111,8 +107,8 @@ public class SortMergeJoin extends Join {
                     Tuple resultTuple = leftTuple.joinWith(rightTuple);
                     nextBatch.add(resultTuple);
                 }
-
                 readNextRightTuple();
+                
                 if (isEndOfRightStream) {
                     readNextLeftTuple(); 
                     if (isEndOfLeftStream) {
@@ -120,7 +116,6 @@ public class SortMergeJoin extends Join {
                     }
 
                     hasInitializedInputStream();
-                    readNextRightBatch();
                 }
             }
         }
@@ -156,10 +151,12 @@ public class SortMergeJoin extends Join {
         try {
             rightBatch = (Batch) inputStream.readObject();
         } catch (Exception e) {
+            isEndOfRightStream = true; 
             rightBatch = null;
         }
 
         if (rightBatch == null || rightBatch.size() == 0) {
+            rightBatch = null;
             isEndOfRightStream = true; 
         }
     }
@@ -168,7 +165,7 @@ public class SortMergeJoin extends Join {
         try {
             FileInputStream fileInputStream = new FileInputStream(file);
             inputStream = new ObjectInputStream(fileInputStream);
-            isEndOfRightStream = false;
+            readNextRightBatch();
             return true;
         } catch (Exception e) {
             return false;
