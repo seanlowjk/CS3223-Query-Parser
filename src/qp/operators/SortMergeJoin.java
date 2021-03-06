@@ -39,12 +39,6 @@ public class SortMergeJoin extends Join {
         batchSize = Batch.getPageSize() / tuplesize;
         leftAttrIndexes = new ArrayList<>();
         rightAttrIndexes = new ArrayList<>();
-        for (Condition con : conditionList) {
-            Attribute leftattr = con.getLhs();
-            Attribute rightattr = (Attribute) con.getRhs();
-            leftAttrIndexes.add(left.getSchema().indexOf(leftattr));
-            rightAttrIndexes.add(right.getSchema().indexOf(rightattr));
-        }
 
         file = null;
         leftBatch = null;
@@ -62,6 +56,13 @@ public class SortMergeJoin extends Join {
     public boolean open() {
         if (!left.open() || !right.open()) {
             return false;
+        }
+
+        for (Condition con : conditionList) {
+            Attribute leftattr = con.getLhs();
+            Attribute rightattr = (Attribute) con.getRhs();
+            leftAttrIndexes.add(left.getSchema().indexOf(leftattr));
+            rightAttrIndexes.add(right.getSchema().indexOf(rightattr));
         }
 
         file = getRelationBatches(right);
