@@ -190,22 +190,4 @@ public class SortMergeJoin extends Join {
             return null; 
         }
     }
-
-    public static Sort getSortOperator(Operator base, Join jn, boolean isLeft) {
-        List<Condition> conditions = jn.getConditionList();
-        List<Attribute> attributes = new ArrayList<>();
-        for (Condition condition : conditions) {
-            if (isLeft) {
-                attributes.add(condition.getLhs());
-            } else {
-                attributes.add((Attribute) condition.getRhs());
-            }
-        }
-        int numBuff = jn.getNumBuff();
-        boolean isDescending = false; 
-        int opType = OpType.SORT;
-        Sort newSort = new Sort(base, attributes, numBuff, isDescending, opType);
-        newSort.setSchema(base.getSchema());
-        return newSort;
-    }
 }
