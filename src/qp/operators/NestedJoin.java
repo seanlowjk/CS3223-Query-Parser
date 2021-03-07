@@ -54,6 +54,9 @@ public class NestedJoin extends Join {
             Attribute rightattr = (Attribute) con.getRhs();
             leftindex.add(left.getSchema().indexOf(leftattr));
             rightindex.add(right.getSchema().indexOf(rightattr));
+            System.out.println(con.getLhs());
+            System.out.println(con.getRhs());
+            System.out.println(this);
         }
         Batch rightpage;
 

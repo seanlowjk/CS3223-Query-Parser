@@ -137,13 +137,16 @@ public class PlanCost {
         long outtuples = (long) Math.ceil(tuples);
 
         /** Calculate the cost of the operation **/
-        int joinType = node.getJoinType();
+        int joinType = JoinType.BLOCKNESTED;
         long numbuff = BufferManager.getBuffersPerJoin();
         long joincost;
 
         switch (joinType) {
             case JoinType.NESTEDJOIN:
                 joincost = leftpages * rightpages;
+                break;
+            case JoinType.BLOCKNESTED:
+                joincost = (long)Math.ceil(leftpages/(numbuff -2)) * rightpages;
                 break;
             default:
                 System.out.println("join type is not supported");
