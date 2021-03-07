@@ -229,9 +229,9 @@ public class RandomOptimizer {
             /** find the node that is to be altered **/
             Join node = (Join) findNodeAt(root, joinNum);
             int prevJoinMeth = node.getJoinType();
-            int joinMeth = RandNumb.randInt(0, numJMeth - 1);
+            int joinMeth = JoinType.getValidJoinType(RandNumb.randInt(0, numJMeth - 1));
             while (joinMeth == prevJoinMeth) {
-                joinMeth = RandNumb.randInt(0, numJMeth - 1);
+                joinMeth = JoinType.getValidJoinType(RandNumb.randInt(0, numJMeth - 1));
             }
             node.setJoinType(joinMeth);
         }

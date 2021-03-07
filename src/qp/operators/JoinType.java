@@ -14,6 +14,15 @@ public class JoinType {
     public static final int HASHJOIN = 3;
 
     public static int numJoinTypes() {
-        return 2;
+        return 4;
+    }
+
+    public static int getValidJoinType(int type) {
+        // TODO: Remove Condition for BLOCKNESTED when implemented and merged. 
+        if (type == BLOCKNESTED || type == HASHJOIN) {
+            return NESTEDJOIN;
+        }
+
+        return type;
     }
 }
