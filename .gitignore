@@ -1,12 +1,11 @@
-
-.project
-.classpath
 # Java Classes
 /classes 
 
 # Intellij Files
 .project
 .idea 
+.DS_Store
+.classpath
 
 # Generated Files
 *.md
