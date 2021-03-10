@@ -32,7 +32,6 @@ public class BlockNestedJoin extends Join {
     int rcurs;                      // Cursor for right side buffer
     boolean eosl;                   // Whether end of stream (left table) is reached
     boolean eosr;                   // Whether end of stream (right table) is reached
-    boolean lastBlock;
     int countLeft = 0;
 
     public BlockNestedJoin(Join jn) {
@@ -71,7 +70,6 @@ public class BlockNestedJoin extends Join {
          ** if it reached end, we have to start new scan
          **/
         eosr = true;
-        lastBlock = false;
 
         /** Right hand side table is to be materialized
          ** for the  Block Nested join to perform
@@ -106,24 +104,31 @@ public class BlockNestedJoin extends Join {
     public Batch next() {
         outbatch = new Batch(batchsize);
 
-        if(lastBlock && !eosl) {
-            return lastBlockMatch();
-        } else if (eosl) {
+        if (eosl) {
             return null;
         }
 
-        while(!outbatch.isFull()) {
+        while (!outbatch.isFull()) {
             try {
                 // need new left page
-                if (leftBlock ==  null || leftBlock.isEmpty() && eosr) {
-                    genBlocks();
-
-                    if(eosl) {
+                if (eosr == true) {
+                    /** new left page is to be fetched**/
+                    leftBlock = generateLeftBuffer(); 
+                    if (leftBlock.isEmpty()) {
+                        eosl = true;
                         return outbatch;
                     }
+                    /** Whenever a new left page came, we have to start the
+                    ** scanning of right table
+                    **/
+                    try {
+                        in = new ObjectInputStream(new FileInputStream(rfname));
+                        eosr = false;
+                    } catch (IOException io) {
+                        System.err.println("NestedJoin:error in reading the file");
+                        System.exit(1);
+                    }
 
-                    in = new ObjectInputStream(new FileInputStream(rfname));
-                    eosr = false;
                 }
             } catch (IOException io) {
                 System.err.println("BlockNestedJoin:error in reading the file");
@@ -215,35 +220,26 @@ public class BlockNestedJoin extends Join {
 
     }
 
-    public void genBlocks() throws Exception {
-        if(leftBlock == null) {
-            leftBlock = new LinkedList<Tuple>();
+    public Queue<Tuple> generateLeftBuffer() throws Exception {
+        int numAvailableBuffers = numBuff - 2;
+        Queue<Tuple> leftBuffer = new LinkedList<Tuple>();
+
+        if (eosl) {
+            return leftBuffer;
         }
 
-        if(!right.open() || !left.open()) {
-            throw new Exception("File supposed to be opened!");
-        }
-
-        if(lastBlock || eosl) {
-            return;
-        }
-
-        for (int i = 0; i < numBuff- 2; i++) {
+        for (int i = 0; i < numAvailableBuffers; i++) {
             Batch leftBatch = left.next();
-            if(leftBatch.isEmpty()) {
-                lastBlock = true;
-
-                if(leftBlock.isEmpty()) {
-                    eosl = true;
+            if (leftBatch == null || leftBatch.isEmpty()) {
+                return leftBuffer;
+            } else {
+                for(int j = 0; j < leftBatch.size(); j++) {
+                    leftBuffer.add(leftBatch.get(j));
                 }
-
-                break;
-            }
-            for(int j = 0; j < leftBatch.size(); j++) {
-                leftBlock.add(leftBatch.get(j));
             }
         }
 
+        return leftBuffer; 
     }
 
     /**
