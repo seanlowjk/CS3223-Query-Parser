@@ -147,6 +147,9 @@ public class PlanCost {
             case JoinType.NESTEDJOIN:
                 joincost = leftpages * rightpages;
                 break;
+            case JoinType.SORTMERGE:
+                joincost = leftpages * rightpages;
+                break;
             default:
                 System.out.println("join type is not supported");
                 return 0;

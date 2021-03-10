@@ -11,6 +11,7 @@ import qp.utils.RandNumb;
 import qp.utils.SQLQuery;
 
 import java.util.ArrayList;
+import java.util.List; 
 
 public class RandomOptimizer {
 
@@ -55,6 +56,28 @@ public class RandomOptimizer {
                     nj.setRight(right);
                     nj.setNumBuff(numbuff);
                     return nj;
+                case JoinType.SORTMERGE:
+                    SortMergeJoin sj = new SortMergeJoin((Join) node);
+                    List<Attribute> leftAttributes = new ArrayList<>();
+                    List<Attribute> rightAttributes = new ArrayList<>();
+
+                    for (Condition con : sj.getConditionList()) {
+                        Attribute leftattr = con.getLhs();
+                        Attribute rightattr = (Attribute) con.getRhs();
+                        leftAttributes.add(leftattr);
+                        rightAttributes.add(rightattr);
+                    }
+
+                    Sort leftSort = new Sort(left, leftAttributes, numbuff, false, OpType.SORT);
+                    leftSort.setSchema(left.getSchema());
+                    sj.setLeft(leftSort);
+
+                    Sort rightSort = new Sort(right, rightAttributes, numbuff, false, OpType.SORT);
+                    rightSort.setSchema(right.getSchema());
+                    sj.setRight(rightSort);
+
+                    sj.setNumBuff(numbuff);
+                    return sj;
                 default:
                     return node;
             }
@@ -210,9 +233,9 @@ public class RandomOptimizer {
             /** find the node that is to be altered **/
             Join node = (Join) findNodeAt(root, joinNum);
             int prevJoinMeth = node.getJoinType();
-            int joinMeth = RandNumb.randInt(0, numJMeth - 1);
+            int joinMeth = JoinType.getValidJoinType(RandNumb.randInt(0, numJMeth - 1));
             while (joinMeth == prevJoinMeth) {
-                joinMeth = RandNumb.randInt(0, numJMeth - 1);
+                joinMeth = JoinType.getValidJoinType(RandNumb.randInt(0, numJMeth - 1));
             }
             node.setJoinType(joinMeth);
         }

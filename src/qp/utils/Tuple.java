@@ -97,7 +97,7 @@ public class Tuple implements Serializable {
     /**
      * Comparing tuples in different tables with multiple conditions, used for join condition checking
      **/
-    public static int compareTuples(Tuple left, Tuple right, ArrayList<Integer> leftIndex, ArrayList<Integer> rightIndex) {
+    public static int compareTuples(Tuple left, Tuple right, List<Integer> leftIndex, List<Integer> rightIndex) {
         if (leftIndex.size() != rightIndex.size()) {
             System.out.println("Tuple: Unknown comparision of the tuples");
             System.exit(1);
