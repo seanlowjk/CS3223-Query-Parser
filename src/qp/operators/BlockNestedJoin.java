@@ -111,16 +111,25 @@ public class BlockNestedJoin extends Join {
             return null;
         }
 
+        int count = 0;
+
         while (!outbatch.isFull()) {
+            System.out.println("Set: " + ++count);
+            if (count > 100) {
+                return null;
+            }
             try {
                 // need new left page
-                if (leftBlock.isEmpty() && eosr == true) {
+                if (leftBlock.isEmpty()) {
                     /** new left page is to be fetched**/
                     leftBlock = generateLeftBuffer(); 
                     if (leftBlock.isEmpty()) {
                         eosl = true;
                         return null;
                     }
+                }
+
+                if (eosr) {
                     /** Whenever a new left page came, we have to start the
                     ** scanning of right table
                     **/
@@ -131,7 +140,6 @@ public class BlockNestedJoin extends Join {
                         System.err.println("NestedJoin:error in reading the file");
                         System.exit(1);
                     }
-
                 }
             } catch (IOException io) {
                 System.err.println("BlockNestedJoin:error in reading the file");
@@ -140,7 +148,7 @@ public class BlockNestedJoin extends Join {
                 System.out.println(e.getMessage());
                 System.exit(1);
             }
-           getJoinBatch();
+            getJoinBatch();
         }
         return outbatch;
     }
@@ -158,22 +166,25 @@ public class BlockNestedJoin extends Join {
                         if (leftTuple.checkJoin(rightTuple, leftindex, rightindex)) {
                             Tuple joinedTuple = leftTuple.joinWith(rightTuple);
                             outbatch.add(joinedTuple);
-                            System.out.println(outbatch.size() +   " vs." + outbatch.capacity());
+                            System.out.println(outbatch.size() + " vs." + outbatch.capacity());
                             if (outbatch.isFull()) {
+                                rcurs = i; 
                                 if (!leftBlock.isEmpty() && rcurs != rightbatch.size() - 1) {
                                     rcurs++;
-                                } else  if (!leftBlock.isEmpty() && rcurs == rightbatch.size() - 1) {
-                                    leftBlock.poll();
+                                } else if (!leftBlock.isEmpty() && rcurs == rightbatch.size() - 1) {
+                                    rightbatch = (Batch) in.readObject();
                                     rcurs = 0;
-                                } else {
+                                } else if (leftBlock.isEmpty() && rcurs != rightbatch.size() - 1) {
+                                    // Do Nothing here. 
+                                } else { // if (leftBlock.isEmpty() && rcurs == rightbatch.size() - 1) 
+                                    rightbatch = (Batch) in.readObject();
                                     rcurs = 0;
                                 }
                                 break;
                             }
-                        }
+                        } 
                     }
-                    System.out.println("Next: " + leftBlock.size());
-                    leftBlock.poll();
+                    rightbatch = (Batch) in.readObject();
                     rcurs = 0;
                 }
             }
@@ -183,6 +194,7 @@ public class BlockNestedJoin extends Join {
             } catch (IOException io) {
                 System.out.println("NestedJoin: Error in reading temporary file");
             }
+            leftBlock.poll(); 
             eosr = true;
         } catch (ClassNotFoundException c) {
             System.out.println("NestedJoin: Error in deserialising temporary file ");
