@@ -15,6 +15,7 @@ import java.util.List;
 
 public class Sort extends Operator {
     private static final String FILE_HEADER = "Stemp";
+    private static int totalFileCounter = 0;
 
     private Operator base;
     private List<Attribute> attributes;
@@ -24,6 +25,8 @@ public class Sort extends Operator {
 
     private List<File> sortedRunsFiles;
     private TupleComparator comparator;
+
+    private int fileCounter;
     private int roundNumber;
     private int fileNumber;
 
@@ -49,6 +52,8 @@ public class Sort extends Operator {
         this.sortedRunsFiles = new ArrayList<>();
         this.comparator = new TupleComparator(base.getSchema(), 
             AttributeDirection.getAttributeDirections(attributes, isDescending));
+
+        this.fileCounter = ++totalFileCounter;
         this.roundNumber = 0;
         this.fileNumber = 0;
         this.inputStream = null;
@@ -162,7 +167,7 @@ public class Sort extends Operator {
             List<Batch> sortedRuns = createSortedRuns(initialRuns, batchSize);
 
             // Generates a file written with the generated sorted files. 
-            String filename = String.format("%s-%d-%d", FILE_HEADER, roundNumber, fileNumber);
+            String filename = String.format("%s-%d-%d-%d", FILE_HEADER, fileCounter, roundNumber, fileNumber);
             File sortedRunsFile = BatchUtils.writeRuns(sortedRuns, filename);
             fileNumber ++;
             sortedRunsFiles.add(sortedRunsFile);
@@ -342,8 +347,8 @@ public class Sort extends Operator {
                 List<Batch> outputBuffers = new ArrayList<>();
                 outputBuffers.add(outputBuffer);
 
-                if (outputBufferFile == null) {
-                    String filename = String.format("%s-%d-%d", FILE_HEADER, roundNumber, fileNumber);
+                if (outputBufferFile == null) {        
+                    String filename = String.format("%s-%d-%d-%d", FILE_HEADER, fileCounter, roundNumber, fileNumber);
                     outputBufferFile = new File(filename);
                     fileNumber ++;
                 }
@@ -356,7 +361,7 @@ public class Sort extends Operator {
             outputBuffers.add(outputBuffer);
 
             if (outputBufferFile == null) {
-                String filename = String.format("%s-%d-%d", FILE_HEADER, roundNumber, fileNumber);
+                String filename = String.format("%s-%d-%d-%d", FILE_HEADER, fileCounter, roundNumber, fileNumber);
                 outputBufferFile = new File(filename);
                 fileNumber ++;
             }
