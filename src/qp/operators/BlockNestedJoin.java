@@ -111,7 +111,7 @@ public class BlockNestedJoin extends Join {
         while (!outbatch.isFull()) {
             try {
                 // need new left page
-                if (eosr == true) {
+                if (leftBlock.isEmpty() && eosr == true) {
                     /** new left page is to be fetched**/
                     leftBlock = generateLeftBuffer(); 
                     if (leftBlock.isEmpty()) {
@@ -142,26 +142,7 @@ public class BlockNestedJoin extends Join {
         return outbatch;
 
     }
-
-    public Batch lastBlockMatch() {
-        outbatch = new Batch(batchsize);
-
-        while (!outbatch.isFull() && !eosl) {
-            try {
-                if (eosr) {
-                    in = new ObjectInputStream(new FileInputStream(rfname));
-                    eosr = false;
-                }
-            } catch (IOException e) {
-                System.err.println("BlockNestedJoin:error in reading the file");
-                System.exit(1);
-            }
-            getJoinBatch();
-        }
-
-        return outbatch;
-    }
-
+    
     public void getJoinBatch() {
         try {
             while (!eosr) {
