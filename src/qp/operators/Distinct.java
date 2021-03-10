@@ -205,7 +205,6 @@ public class Distinct extends Operator {
             List<ObjectInputStream> sortedRunsOIS = BatchUtils.createInputStreams(sortedRunsFiles);
             int maxPages = Math.min(sortedRunsFiles.size(), numberOfAvailableBuffers);
             int roundParts = (int) Math.ceil(sortedRunsFiles.size() / maxPages);
-            System.out.println(maxPages);
 
             for (int i = 0; i < roundParts; i++) {
                 int[] interimBufferPointers = new int[maxPages];
@@ -217,11 +216,12 @@ public class Distinct extends Operator {
                 }
 
                 // Initialise empty file to append buffer to
+                List<Batch> outputBufferBatches = new ArrayList<>();
                 String roundPartFilename = String.format("distinct-%d-%d", roundNum, i);
-                File roundPartFile = new File(roundPartFilename);
 
                 // Perform (B - 1)-way merges
                 boolean hasRemaining = true;
+                int count = 0; 
 
                 while (hasRemaining) {
                     hasRemaining = false;
@@ -288,16 +288,21 @@ public class Distinct extends Operator {
                     }
 
                     if (smallestTuple != null) {
+                        if (outputBatch.size() == batchSize) {
+                            outputBufferBatches.add(outputBatch);
+                            outputBatch = new Batch(batchSize);
+                        }
                         outputBatch.add(smallestTuple);
                         interimBufferPointers[batchId]++;
                     }
-
-                    if (outputBatch.size() == batchSize || smallestTuple == null) {
-                        BatchUtils.appendRuns(List.of(outputBatch), roundPartFile);
-                        outputBatch = new Batch(batchSize);
-                    }
                 }
 
+                if (outputBatch.size() > 0) {
+                    outputBufferBatches.add(outputBatch);
+                    outputBatch = new Batch(batchSize);
+                }
+
+                File roundPartFile = BatchUtils.writeRuns(outputBufferBatches, roundPartFilename);
                 newSortedRunsFiles.add(roundPartFile);
                 interimBuffer = new ArrayList<>();
             }
