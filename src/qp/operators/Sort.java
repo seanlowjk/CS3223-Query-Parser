@@ -54,7 +54,7 @@ public class Sort extends Operator {
             AttributeDirection.getAttributeDirections(attributes, isDescending));
 
         this.fileCounter = ++totalFileCounter;
-        this.roundNumber = 0;
+        this.roundNumber = -1;
         this.fileNumber = 0;
         this.inputStream = null;
     }
@@ -160,17 +160,22 @@ public class Sort extends Operator {
             while (numberOfBuffersUsed < numberOfBuffers && nextRun != null) {
                 initialRuns.add(nextRun);
                 nextRun = base.next();
+                if (nextRun == null) {
+                    break;
+                }
                 numberOfBuffersUsed++;
             }
 
             // Creates the sorted runs from the given initial runs made. 
             List<Batch> sortedRuns = createSortedRuns(initialRuns, batchSize);
 
-            // Generates a file written with the generated sorted files. 
-            String filename = String.format("%s-%d-%d-%d", FILE_HEADER, fileCounter, roundNumber, fileNumber);
-            File sortedRunsFile = BatchUtils.writeRuns(sortedRuns, filename);
-            fileNumber ++;
-            sortedRunsFiles.add(sortedRunsFile);
+            if (sortedRuns.size() > 0) {
+                // Generates a file written with the generated sorted files. 
+                String filename = String.format("%s-%d-%d-%d", FILE_HEADER, fileCounter, roundNumber, fileNumber);
+                File sortedRunsFile = BatchUtils.writeRuns(sortedRuns, filename);
+                fileNumber ++;
+                sortedRunsFiles.add(sortedRunsFile);
+            }
         }
 
         numberOfPages = sortedRunsFiles.size() * numberOfBuffers;
@@ -225,17 +230,16 @@ public class Sort extends Operator {
         // Condition to check if more merging is needed before producing a full sorted run. 
         while (sortedRunsFiles.size() > 1) {
             List<File> sortedRuns = new ArrayList<>();
-            int round = 0;
 
             // Condition where the merging of sorted runs should end only if 
             // all the sorted run files have been processed. 
-            while (round * numberOfAvailableBuffers < sortedRunsFiles.size()) {
-                int firstFileNumber = round * numberOfAvailableBuffers;
-                int lastFileNumber = Math.min((round + 1) * numberOfAvailableBuffers, 
-                    sortedRunsFiles.size());
+            while (roundNumber * numberOfAvailableBuffers < sortedRunsFiles.size()) {
+                int firstFileNumber = roundNumber * numberOfAvailableBuffers;
+                int numBuffersAllocated = Math.min(numberOfAvailableBuffers, sortedRunsFiles.size());
+                int lastFileNumber = firstFileNumber + numBuffersAllocated - 1;
                 
                 List<File> runsToMerge = new ArrayList<>();
-                for (int i = firstFileNumber; i < lastFileNumber; i++) {
+                for (int i = firstFileNumber; i <= lastFileNumber; i++) {
                     File sortedRun = sortedRunsFiles.get(i);
                     runsToMerge.add(sortedRun);
                 }
@@ -246,11 +250,11 @@ public class Sort extends Operator {
 
                 // Combine the Sorted Runs into a merged sorted run, 
                 // and then writing the merged sorted run to a file. 
-                File combinedSortedRunFile = combineSortedRuns(runsToMerge, numberOfAvailableBuffers, batchSize);
+                File combinedSortedRunFile = combineSortedRuns(runsToMerge, numBuffersAllocated, batchSize);
                 sortedRuns.add(combinedSortedRunFile);
-            }
 
-            gotoNextRound();
+                gotoNextRound();
+            }
 
             // Cleanup original sorted run files. 
             for (File originalRun : sortedRunsFiles) {
@@ -279,9 +283,8 @@ public class Sort extends Operator {
             inputBuffers.add(batch);
         }
 
-        Batch outputBuffer = new Batch(batchSize);
         File outputBufferFile = combineInputBuffers(inputStreams, inputBuffers, 
-            numberOfAvailableBuffers, outputBuffer);
+            numberOfAvailableBuffers, batchSize);
 
         return outputBufferFile;
     }
@@ -296,7 +299,11 @@ public class Sort extends Operator {
      * @param batchSize the size of the page given. 
      */
     private File combineInputBuffers(List<ObjectInputStream> inputStreams, 
-        List<Batch> inputBuffers, int numberOfAvailableBuffers, Batch outputBuffer) {
+        List<Batch> inputBuffers, int numberOfAvailableBuffers, int batchSize) {
+
+        // Initialize necessary variables. 
+        List<Batch> outputBatches = new ArrayList<>();
+        Batch outputBuffer = new Batch(batchSize);
         File outputBufferFile = null;
         int[] inputBufferPointers = new int[numberOfAvailableBuffers];
         int numberOfRunsFinished = 0;
@@ -330,7 +337,7 @@ public class Sort extends Operator {
             // If so, try to read in the next tuples. If not, just leave it empty. 
             // NOTE: this algorithm is slightly different from the one that we 
             // have learnt in our CS3223 Lecture. 
-            if (inputBufferPointers[smallestTupleIndex] == desiredInputBuffer.capacity()) {
+            if (inputBufferPointers[smallestTupleIndex] >= desiredInputBuffer.size()) {
                 ObjectInputStream desiredInputStream = inputStreams.get(smallestTupleIndex);
                 Batch nextBatch = BatchUtils.readBatch(desiredInputStream);
 
@@ -343,30 +350,25 @@ public class Sort extends Operator {
             }
 
             outputBuffer.add(smallestTuple);
-            if (outputBuffer.isFull()) {
-                List<Batch> outputBuffers = new ArrayList<>();
-                outputBuffers.add(outputBuffer);
 
-                if (outputBufferFile == null) {        
-                    String filename = String.format("%s-%d-%d-%d", FILE_HEADER, fileCounter, roundNumber, fileNumber);
-                    outputBufferFile = new File(filename);
-                    fileNumber ++;
-                }
-                outputBufferFile = BatchUtils.appendRuns(outputBuffers, outputBufferFile);
+            if (outputBuffer.isFull()) {
+                outputBatches.add(outputBuffer);
+                outputBuffer = new Batch(batchSize);
+            }
+
+            if (smallestTuple == null) {
+                break; 
             }
         }
 
         if (!outputBuffer.isEmpty()) {
-            List<Batch> outputBuffers = new ArrayList<>();
-            outputBuffers.add(outputBuffer);
-
-            if (outputBufferFile == null) {
-                String filename = String.format("%s-%d-%d-%d", FILE_HEADER, fileCounter, roundNumber, fileNumber);
-                outputBufferFile = new File(filename);
-                fileNumber ++;
-            }
-            outputBufferFile = BatchUtils.appendRuns(outputBuffers, outputBufferFile);
+            outputBatches.add(outputBuffer);
+            outputBuffer = new Batch(batchSize);
         }
+
+        String filename = String.format("%s-%d-%d-%d", FILE_HEADER, fileCounter, roundNumber, fileNumber);
+        fileNumber ++;
+        outputBufferFile = BatchUtils.writeRuns(outputBatches, filename);
         
         return outputBufferFile;
     }
