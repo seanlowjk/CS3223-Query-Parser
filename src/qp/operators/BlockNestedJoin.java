@@ -169,6 +169,7 @@ public class BlockNestedJoin extends Join {
             while (!eosr) {
                 if (rcurs == 0) {
                     rightbatch = (Batch) in.readObject();
+                    System.out.println("read");
                 }
                 while (!leftBlock.isEmpty()) {
                     Tuple leftTuple = leftBlock.peek();
@@ -186,19 +187,18 @@ public class BlockNestedJoin extends Join {
                             if (outbatch.isFull()) {
                                 if (!leftBlock.isEmpty() && rcurs != rightbatch.size() - 1) {
                                     rcurs++;
-                                } else {
-
-                                    if (!leftBlock.isEmpty()) {
+                                } else  if (!leftBlock.isEmpty() && rcurs == rightbatch.size() - 1) {
                                         leftBlock.poll();
-                                    }
+                                        rcurs = 0;
+                                } else {
                                     rcurs = 0;
                                 }
                                 break;
                             }
                         }
                     }
-                    rcurs = 0;
                     leftBlock.poll();
+                    System.out.println(rcurs);
                 }
 
                 if(lastBlock) {

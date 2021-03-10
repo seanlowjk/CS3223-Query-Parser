@@ -114,6 +114,7 @@ public class NestedJoin extends Join {
             if (lcurs == 0 && eosr == true) {
                 /** new left page is to be fetched**/
                 leftbatch = (Batch) left.next();
+                System.out.println("left");
                 if (leftbatch == null) {
                     eosl = true;
                     return outbatch;
@@ -123,6 +124,7 @@ public class NestedJoin extends Join {
                  **/
                 try {
                     in = new ObjectInputStream(new FileInputStream(rfname));
+                    System.out.println("yo");
                     eosr = false;
                 } catch (IOException io) {
                     System.err.println("NestedJoin:error in reading the file");
@@ -134,13 +136,17 @@ public class NestedJoin extends Join {
                 try {
                     if (rcurs == 0 && lcurs == 0) {
                         rightbatch = (Batch) in.readObject();
+                        System.out.println("right");
                     }
                     for (i = lcurs; i < leftbatch.size(); ++i) {
+                        System.out.println(rcurs);
                         for (j = rcurs; j < rightbatch.size(); ++j) {
                             Tuple lefttuple = leftbatch.get(i);
+                            System.out.println(lefttuple._data);
                             Tuple righttuple = rightbatch.get(j);
                             if (lefttuple.checkJoin(righttuple, leftindex, rightindex)) {
                                 Tuple outtuple = lefttuple.joinWith(righttuple);
+                                System.out.println("joined");
                                 outbatch.add(outtuple);
                                 if (outbatch.isFull()) {
                                     if (i == leftbatch.size() - 1 && j == rightbatch.size() - 1) {  //case 1

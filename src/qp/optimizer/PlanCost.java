@@ -137,7 +137,7 @@ public class PlanCost {
         long outtuples = (long) Math.ceil(tuples);
 
         /** Calculate the cost of the operation **/
-        int joinType = JoinType.BLOCKNESTED;
+        int joinType = JoinType.NESTEDJOIN;
         long numbuff = BufferManager.getBuffersPerJoin();
         long joincost;
 
