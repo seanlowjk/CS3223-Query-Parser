@@ -78,6 +78,8 @@ public class PlanCost {
             return getStatistics((Scan) node);
         } else if (node.getOpType() == OpType.SORT) {
             return getStatistics((Sort) node);
+        } else if (node.getOpType() == OpType.DISTINCT) {
+            return getStatistics((Distinct) node);
         }
         System.out.println("operator is not supported");
         isFeasible = false;
@@ -272,6 +274,11 @@ public class PlanCost {
     private long getStatistics(Sort node) {
         cost += node.calculateTotalIOCost();
         return calculateCost(node.getBase());
+    }
+
+    protected long getStatistics(Distinct node) {
+        // TODO: Acually calculate the I/O cost
+        return 1000;
     }
 
 }
