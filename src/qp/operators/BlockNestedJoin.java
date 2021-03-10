@@ -42,7 +42,6 @@ public class BlockNestedJoin extends Join {
         numBuff = jn.getNumBuff();
     }
 
-
     /**
      * During open finds the index of the join attributes
      * * Materializes the right hand side into a file
@@ -104,7 +103,6 @@ public class BlockNestedJoin extends Join {
 
     @Override
     public Batch next() {
-
         outbatch = new Batch(batchsize);
 
         if(lastBlock && !eosl) {
@@ -140,26 +138,20 @@ public class BlockNestedJoin extends Join {
     }
 
     public Batch lastBlockMatch() {
-
         outbatch = new Batch(batchsize);
 
         while (!outbatch.isFull() && !eosl) {
             try {
-
                 if (eosr) {
                     in = new ObjectInputStream(new FileInputStream(rfname));
                     eosr = false;
                 }
-
             } catch (IOException e) {
-
                 System.err.println("BlockNestedJoin:error in reading the file");
                 System.exit(1);
-
             }
             getJoinBatch();
         }
-
 
         return outbatch;
     }
@@ -223,7 +215,6 @@ public class BlockNestedJoin extends Join {
     }
 
     public void genBlocks() throws Exception {
-
         if(leftBlock == null) {
             leftBlock = new LinkedList<Tuple>();
         }
@@ -236,8 +227,7 @@ public class BlockNestedJoin extends Join {
             return;
         }
 
-        for(int i = 0; i < numBuff- 2; i++) {
-
+        for (int i = 0; i < numBuff- 2; i++) {
             Batch leftBatch = left.next();
             if(leftBatch.isEmpty()) {
                 lastBlock = true;
@@ -263,5 +253,4 @@ public class BlockNestedJoin extends Join {
         f.delete();
         return true;
     }
-
 }
