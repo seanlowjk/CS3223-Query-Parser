@@ -111,13 +111,7 @@ public class BlockNestedJoin extends Join {
             return null;
         }
 
-        int count = 0;
-
         while (!outbatch.isFull()) {
-            System.out.println("Set: " + ++count);
-            if (count > 100) {
-                return null;
-            }
             try {
                 // need new left page
                 if (leftBlock.isEmpty()) {
@@ -125,7 +119,11 @@ public class BlockNestedJoin extends Join {
                     leftBlock = generateLeftBuffer(); 
                     if (leftBlock.isEmpty()) {
                         eosl = true;
-                        return null;
+                        if (outbatch.isEmpty()) {
+                            return null;
+                        } else {
+                            return outbatch;
+                        }
                     }
                 }
 
@@ -166,7 +164,6 @@ public class BlockNestedJoin extends Join {
                         if (leftTuple.checkJoin(rightTuple, leftindex, rightindex)) {
                             Tuple joinedTuple = leftTuple.joinWith(rightTuple);
                             outbatch.add(joinedTuple);
-                            System.out.println(outbatch.size() + " vs." + outbatch.capacity());
                             if (outbatch.isFull()) {
                                 rcurs = i; 
                                 if (!leftBlock.isEmpty() && rcurs != rightbatch.size() - 1) {

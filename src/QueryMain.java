@@ -155,7 +155,6 @@ public class QueryMain {
      * Execute query and print run statistics
      **/
     public static double executeQuery(Operator root, String resultfile) {
-        System.out.println("Query Starting to Execute...");
         long starttime = System.currentTimeMillis();
         if (root.open() == false) {
             System.out.println("Root: Error in opening of root");
