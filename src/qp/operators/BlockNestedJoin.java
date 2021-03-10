@@ -71,6 +71,7 @@ public class BlockNestedJoin extends Join {
          ** if it reached end, we have to start new scan
          **/
         eosr = true;
+        lastBlock = false;
 
         /** Right hand side table is to be materialized
          ** for the  Block Nested join to perform
