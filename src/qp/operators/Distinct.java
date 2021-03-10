@@ -221,7 +221,6 @@ public class Distinct extends Operator {
 
                 // Perform (B - 1)-way merges
                 boolean hasRemaining = true;
-                int count = 0; 
 
                 while (hasRemaining) {
                     hasRemaining = false;
