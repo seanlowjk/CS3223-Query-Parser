@@ -1,3 +1,0 @@
-export WORKING_DIR=`pwd`
-export CLASSPATH="$WORKING_DIR:$WORKING_DIR/classes:$WORKING_DIR/lib/java_cup:$WORKING_DIR/lib/JLex:."
-export COMPONENT="$WORKING_DIR"
