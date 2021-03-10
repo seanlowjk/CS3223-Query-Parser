@@ -71,6 +71,9 @@ public class BlockNestedJoin extends Join {
          **/
         eosr = true;
 
+        /* Initialize the leftBlock, aka the left buffer. */
+        leftBlock = new LinkedList<>();
+
         /** Right hand side table is to be materialized
          ** for the  Block Nested join to perform
          **/
@@ -116,7 +119,7 @@ public class BlockNestedJoin extends Join {
                     leftBlock = generateLeftBuffer(); 
                     if (leftBlock.isEmpty()) {
                         eosl = true;
-                        return outbatch;
+                        return null;
                     }
                     /** Whenever a new left page came, we have to start the
                     ** scanning of right table
@@ -140,35 +143,28 @@ public class BlockNestedJoin extends Join {
            getJoinBatch();
         }
         return outbatch;
-
     }
-    
+
     public void getJoinBatch() {
         try {
             while (!eosr) {
                 if (rcurs == 0) {
                     rightbatch = (Batch) in.readObject();
-                    System.out.println("read");
                 }
                 while (!leftBlock.isEmpty()) {
                     Tuple leftTuple = leftBlock.peek();
-                    System.out.println("__________");
-                    System.out.println(leftTuple._data);
-                    System.out.println(rcurs);
-                    System.out.println("__________");
                     for (int i = rcurs; i < rightbatch.size(); i++) {
                         Tuple rightTuple = rightbatch.get(i);
-                        System.out.println(rightTuple._data);
                         if (leftTuple.checkJoin(rightTuple, leftindex, rightindex)) {
                             Tuple joinedTuple = leftTuple.joinWith(rightTuple);
                             outbatch.add(joinedTuple);
-                            System.out.println("joined");
+                            System.out.println(outbatch.size() +   " vs." + outbatch.capacity());
                             if (outbatch.isFull()) {
                                 if (!leftBlock.isEmpty() && rcurs != rightbatch.size() - 1) {
                                     rcurs++;
                                 } else  if (!leftBlock.isEmpty() && rcurs == rightbatch.size() - 1) {
-                                        leftBlock.poll();
-                                        rcurs = 0;
+                                    leftBlock.poll();
+                                    rcurs = 0;
                                 } else {
                                     rcurs = 0;
                                 }
@@ -176,12 +172,9 @@ public class BlockNestedJoin extends Join {
                             }
                         }
                     }
+                    System.out.println("Next: " + leftBlock.size());
                     leftBlock.poll();
-                    System.out.println(rcurs);
-                }
-
-                if(lastBlock) {
-                    eosl = true;
+                    rcurs = 0;
                 }
             }
         } catch (EOFException e) {
