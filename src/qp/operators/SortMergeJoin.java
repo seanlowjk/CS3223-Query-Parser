@@ -104,16 +104,46 @@ public class SortMergeJoin extends Join {
                 return false;
         }
 
+        try {
+            lin = new ObjectInputStream(new FileInputStream(lfname));
+        } catch (IOException io) {
+            System.err.println("SortMergeJoin:error in reading the left file");
+            System.exit(1);
+        }
+
         return true; 
     }
 
     @Override
     public Batch next() {
-        if (isEndOfLeftStream) {
+        outbatch = new Batch(batchsize);
+
+        if (eosl) {
             return null;
         }
 
-        return getNextBatch();
+        while (!outbatch.isFull()) {
+            try {
+
+                if (eosr) {
+                    try {
+                        in = new ObjectInputStream(new FileInputStream(rfname));
+                        eosr = false;
+                    } catch (IOException io) {
+                        System.err.println("SortMergeJoin:error in reading the right file");
+                        System.exit(1);
+                    }
+                }
+            } catch (IOException io) {
+                System.err.println("SortMergeJoin:error in reading the file");
+                System.exit(1);
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+                System.exit(1);
+            }
+            getJoinBatch();
+        }
+        return outbatch;
     }
 
     @Override
