@@ -116,18 +116,22 @@ public class Sort extends Operator {
      * Returns the total I/O cost, which is represented by 
      * 2 X |R| X numberOfPasses. 
      */
-    public long calculateTotalIOCost() {
-        return 2 * numberOfPages + calculateNumberOfPasses();
+    public static int calculateTotalIOCost(int numberOfPages, int numberOfBuffers) {
+        return 2 * numberOfPages + calculateNumberOfPasses(numberOfPages, numberOfBuffers);
     }
 
     /**
      * Calculates the number of passes needed for the generatedSortedRuns and 
      * mergeSortedRuns phases. 
      */
-    private int calculateNumberOfPasses() {
+    private static int calculateNumberOfPasses(int numberOfPages, int numberOfBuffers) {
         double numberOfOriginalSortedRuns = Math.ceil(numberOfPages / (1.0 * numberOfBuffers));
         int numPasses = 1 + (int) Math.ceil(Math.log(numberOfOriginalSortedRuns) / Math.log(numberOfPages -1));
         return numPasses;
+    }
+
+    public int getNumberOfPages() {
+        return this.numberOfPages;
     }
 
     /**
