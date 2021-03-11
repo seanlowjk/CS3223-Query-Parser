@@ -243,5 +243,4 @@ public class SortMergeJoin extends Join {
             System.exit(1);
         }
     }
-
 }
