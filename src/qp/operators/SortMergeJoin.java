@@ -123,11 +123,10 @@ public class SortMergeJoin extends Join {
                             return outbatch;
                         }
 
-                        if (newrcurs >= rightbatch.size()) {
+                        if (newrcurs > rightbatch.size()) {
                             newrcurs -= rightbatch.size();
                         } 
                     }
-
 
                 } catch (IOException io) {
                     System.err.println("SortMergeJoin: Error in reading the right file");
@@ -150,8 +149,6 @@ public class SortMergeJoin extends Join {
     }
 
     private void getJoinBatch() {
-        int i = 0;
-        int j = 0; 
         try {
             while (!eosr) {
                 if (rightbatch == null || rcurs >= rightbatch.size()) {
@@ -162,39 +159,31 @@ public class SortMergeJoin extends Join {
                     rightbatch = (Batch) in.readObject();
                 }
 
-                for (i = lcurs; i < leftbatch.size(); ++i) {
-                    boolean istupledone = false;
-                    for (j = rcurs; j < rightbatch.size(); ++j) {
-                        Tuple lefttuple = leftbatch.get(i);
-                        Tuple righttuple = rightbatch.get(j);
-                        if (lefttuple.checkJoin(righttuple, leftindex, rightindex)) {
-                            Tuple outtuple = lefttuple.joinWith(righttuple);
-                            outbatch.add(outtuple);
-                            if (outbatch.isFull()) {
-                                rcurs = ++j; 
+                while (rcurs < rightbatch.size()) {
+                    Tuple lefttuple = leftbatch.get(lcurs);
+                    Tuple righttuple = rightbatch.get(rcurs);
+                    if (lefttuple.checkJoin(righttuple, leftindex, rightindex)) {
+                        Tuple outtuple = lefttuple.joinWith(righttuple);
+                        outbatch.add(outtuple);
+                        rcurs++;
+                        if (outbatch.isFull()) {
+                            return;
+                        }
+                    } else {
+                        int comparisonfactor = Tuple.compareTuples(lefttuple, righttuple, leftindex, rightindex);
+                        if (comparisonfactor > 0) {
+                            rcurs++;
+                        } else { // comparisonfacotr < 0;
+                            lcurs++;
+                            tuplestoclear--;
+                            if (lcurs >= leftbatch.size()) {
                                 return;
-                            }
-                        } else {
-                            int comparisonfactor = Tuple.compareTuples(lefttuple, righttuple, leftindex, rightindex);
-                            if (comparisonfactor > 0) {
-                                rcurs = ++j;
-                                if (j == rightbatch.size()) {  
-                                    return; 
-                                }
-                            } else { // comparisonfacotr < 0;
-                                rcurs = j;
-                                lcurs++;
-                                tuplestoclear--;
-                                if (lcurs >= leftbatch.size()) {
-                                    return;
-                                } else {
-                                    break;
-                                }
+                            } else {
+                                break;
                             }
                         }
                     }
                 }
-                rcurs = ++j;
             }
         } catch (EOFException e) {
             try {
