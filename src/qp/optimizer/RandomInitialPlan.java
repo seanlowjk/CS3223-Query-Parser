@@ -52,11 +52,6 @@ public class RandomInitialPlan {
      **/
     public Operator prepareInitialPlan() {
 
-        if (sqlquery.getGroupByList().size() > 0) {
-            System.err.println("GroupBy is not implemented.");
-            System.exit(1);
-        }
-
         tab_op_hash = new HashMap<>();
         createScanOp();
         createSelectOp();
@@ -64,6 +59,7 @@ public class RandomInitialPlan {
             createJoinOp();
         }
         createProjectOp();
+        createGroupByOp();
         createDistinctOp();
 
         if (orderByList.size() > 0) {
@@ -209,6 +205,19 @@ public class RandomInitialPlan {
 
         Operator base = root;
         root = new Distinct(root, sqlquery.getProjectList());
+        root.setSchema(base.getSchema());
+    }
+
+    /**
+     * Supports the use of the GROUP BY operator.
+     */
+    public void createGroupByOp() {
+        if (!sqlquery.isGroupBy()) {
+            return;
+        }
+
+        Operator base = root;
+        root = new GroupBy(root, sqlquery.getGroupByList());
         root.setSchema(base.getSchema());
     }
 
