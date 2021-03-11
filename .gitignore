@@ -4,6 +4,8 @@
 # Intellij Files
 .project
 .idea 
+.DS_Store
+.classpath
 
 # Generated Files
 *.md
@@ -11,3 +13,4 @@
 *.txt
 *.tbl
 *.out
+
