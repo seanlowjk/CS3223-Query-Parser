@@ -24,6 +24,7 @@ public class SortMergeJoin extends Join {
     Batch rightbatch;               // Buffer page for right input stream
     ObjectInputStream rin;          // File pointer to the right hand materialized file
 
+    int lcurs;                      // Cursor for left side buffer 
     int rcurs;                      // Cursor for right side buffer
     boolean eosl;                   // Whether end of stream (left table) is reached
     boolean eosr;                   // Whether end of stream (right table) is reached
@@ -54,11 +55,9 @@ public class SortMergeJoin extends Join {
         Batch rightpage;
 
         /** initialize the cursors of input buffers **/
+        lcurs = 0; 
         rcurs = 0;
         eosl = false;
-        /** because right stream is to be repetitively scanned
-         ** if it reached end, we have to start new scan
-         **/
         eosr = true;
 
         inputStream = null;
@@ -67,15 +66,44 @@ public class SortMergeJoin extends Join {
             return false;
         }
 
-        for (Condition con : conditionList) {
-            Attribute leftattr = con.getLhs();
-            Attribute rightattr = (Attribute) con.getRhs();
-            leftAttrIndexes.add(left.getSchema().indexOf(leftattr));
-            rightAttrIndexes.add(right.getSchema().indexOf(rightattr));
+        if (!right.open()) {
+            return false;
+        } else {
+            filenum++;
+            rfname = "SMJtemp-r-" + String.valueOf(filenum);
+            try {
+                ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(rfname));
+                while ((rightpage = right.next()) != null) {
+                    out.writeObject(rightpage);
+                }
+                out.close();
+            } catch (IOException io) {
+                System.out.println("BlockNestedJoin: Error writing to temporary file");
+                return false;
+            }
+            if (!right.close())
+                return false;
         }
 
-        file = getRelationBatches(right);
-        readNextLeftBatch();
+        if (!left.open()) {
+            return false;
+        } else {
+            filenum++;
+            lfname = "SMJtemp-l-" + String.valueOf(filenum);
+            try {
+                ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(lfname));
+                while ((leftpage = left.next()) != null) {
+                    out.writeObject(leftpage);
+                }
+                out.close();
+            } catch (IOException io) {
+                System.out.println("BlockNestedJoin: Error writing to temporary file");
+                return false;
+            }
+            if (!left.close())
+                return false;
+        }
+
         return true; 
     }
 
@@ -90,11 +118,11 @@ public class SortMergeJoin extends Join {
 
     @Override
     public boolean close() {
-        file.delete();
-
-        if (!left.close() || !right.close()) {
-            return false;
-        }
+        File rf = new File(rfname);
+        rf.delete();
+        
+        File lf = new File(lfname);
+        lf.delete(); 
         return true;
     }
 
