@@ -116,7 +116,7 @@ public class Sort extends Operator {
      * Returns the total I/O cost, which is represented by 
      * 2 X |R| X numberOfPasses. 
      */
-    public int calculateTotalIOCost() {
+    public long calculateTotalIOCost() {
         return 2 * numberOfPages + calculateNumberOfPasses();
     }
 

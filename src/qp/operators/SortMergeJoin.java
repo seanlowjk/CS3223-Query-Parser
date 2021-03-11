@@ -149,6 +149,11 @@ public class SortMergeJoin extends Join {
         return left.close() && right.close();
     }
 
+    public long calculateTotalSortIOCost() {
+        return ((Sort) left).calculateTotalIOCost() + 
+            ((Sort) right).calculateTotalIOCost();
+    }
+
     private void getJoinBatch() {
         int i = 0;
         int j = 0; 
