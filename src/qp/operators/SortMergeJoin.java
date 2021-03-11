@@ -20,9 +20,8 @@ public class SortMergeJoin extends Join {
     
     Batch outbatch;                 // Buffer page for output 
     Batch leftbatch;                // Buffer block for left input stream
-    ObjectInputStream lin;          // File pointer to the right hand materialized file
     Batch rightbatch;               // Buffer page for right input stream
-    ObjectInputStream rin;          // File pointer to the right hand materialized file
+    ObjectInputStream in;          // File pointer to the right hand materialized file
 
     int lcurs;                      // Cursor for left side buffer 
     int rcurs;                      // Cursor for right side buffer
@@ -60,12 +59,6 @@ public class SortMergeJoin extends Join {
         eosl = false;
         eosr = true;
 
-        inputStream = null;
-
-        if (!left.open() || !right.open()) {
-            return false;
-        }
-
         if (!right.open()) {
             return false;
         } else {
@@ -85,33 +78,7 @@ public class SortMergeJoin extends Join {
                 return false;
         }
 
-        if (!left.open()) {
-            return false;
-        } else {
-            filenum++;
-            lfname = "SMJtemp-l-" + String.valueOf(filenum);
-            try {
-                ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(lfname));
-                while ((leftpage = left.next()) != null) {
-                    out.writeObject(leftpage);
-                }
-                out.close();
-            } catch (IOException io) {
-                System.out.println("BlockNestedJoin: Error writing to temporary file");
-                return false;
-            }
-            if (!left.close())
-                return false;
-        }
-
-        try {
-            lin = new ObjectInputStream(new FileInputStream(lfname));
-        } catch (IOException io) {
-            System.err.println("SortMergeJoin:error in reading the left file");
-            System.exit(1);
-        }
-
-        return true; 
+        return left.open();
     }
 
     @Override
@@ -123,31 +90,23 @@ public class SortMergeJoin extends Join {
         }
 
         while (!outbatch.isFull()) {
-            try {
-                if (lcurs == 0) {
-                    /** new left page is to be fetched**/
-                    leftbatch = (Batch) left.next();
-                    if (leftbatch == null) {
-                        eosl = true;
-                        return outbatch;
-                    }
+            if (lcurs == 0) {
+                /** new left page is to be fetched**/
+                leftbatch = (Batch) left.next();
+                if (leftbatch == null) {
+                    eosl = true;
+                    return outbatch;
                 }
+            }
 
-                if (eosr) {
-                    try {
-                        rin = new ObjectInputStream(new FileInputStream(rfname));
-                        eosr = false;
-                    } catch (IOException io) {
-                        System.err.println("SortMergeJoin:error in reading the right file");
-                        System.exit(1);
-                    }
+            if (eosr) {
+                try {
+                    in = new ObjectInputStream(new FileInputStream(rfname));
+                    eosr = false;
+                } catch (IOException io) {
+                    System.err.println("SortMergeJoin:error in reading the right file");
+                    System.exit(1);
                 }
-            } catch (IOException io) {
-                System.err.println("SortMergeJoin:error in reading the file");
-                System.exit(1);
-            } catch (Exception e) {
-                System.out.println(e.getMessage());
-                System.exit(1);
             }
             getJoinBatch();
         }
@@ -162,6 +121,11 @@ public class SortMergeJoin extends Join {
         File lf = new File(lfname);
         lf.delete(); 
         return true;
+    }
+
+    private Batch getJoinBatch() {
+        Batch nextbatch = new Batch(batchsize);
+        return nextbatch;
     }
 
     /*
