@@ -158,8 +158,6 @@ public class SortMergeJoin extends Join {
                             prevtuple = lefttuple;
                             backtrackpointer = gotopointer;
                             backtrackcurs = rcurs;
-                            System.out.println("Backtracking: " + prevtuple._data + " at " + (backtrackpointer
-                                + backtrackcurs));
                         }
 
                         Tuple outtuple = lefttuple.joinWith(righttuple);
