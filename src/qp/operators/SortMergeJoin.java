@@ -15,7 +15,6 @@ public class SortMergeJoin extends Join {
     ArrayList<Integer> leftindex;   // Indices of the join attributes in left table
     ArrayList<Integer> rightindex;  // Indices of the join attributes in right table
 
-    String lfname;                  // The file name where the left table is materialized 
     String rfname;                  // The file name where the right table is materialized
     
     Batch outbatch;                 // Buffer page for output 
@@ -63,7 +62,7 @@ public class SortMergeJoin extends Join {
             return false;
         } else {
             filenum++;
-            rfname = "SMJtemp-r-" + String.valueOf(filenum);
+            rfname = "SMJtemp-" + String.valueOf(filenum);
             try {
                 ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(rfname));
                 while ((rightpage = right.next()) != null) {
@@ -117,9 +116,6 @@ public class SortMergeJoin extends Join {
     public boolean close() {
         File rf = new File(rfname);
         rf.delete();
-        
-        File lf = new File(lfname);
-        lf.delete(); 
         return true;
     }
 
