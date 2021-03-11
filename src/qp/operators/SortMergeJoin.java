@@ -116,51 +116,59 @@ public class SortMergeJoin extends Join {
     public boolean close() {
         File rf = new File(rfname);
         rf.delete();
-        return true;
+        return left.close() && right.close();
     }
 
-    private Batch getJoinBatch() {
-        Batch nextbatch = new Batch(batchsize);
-        return nextbatch;
-    }
-
-    /*
-    private Batch getNextBatch() {
-        Batch nextBatch = new Batch(batchSize);
-        if (!hasInitializedInputStream()) {
-            return null; 
-        }
-
-        while (!nextBatch.isFull()) {
-            Tuple leftTuple = leftBatch.get(leftPointer);
-            Tuple rightTuple = rightBatch.get(rightPointer);
-            int comparisonResult = Tuple.compareTuples(leftTuple, rightTuple, 
-                leftAttrIndexes, rightAttrIndexes);
-            if (comparisonResult < 0) {
-                hasInitializedInputStream();
-                readNextLeftTuple();
-                if (isEndOfLeftStream) {
-                    return nextBatch; 
+    private void getJoinBatch() {
+        int i, j; 
+        try {
+            while (!eosr) {
+                if (rcurs == 0) {
+                    rightbatch = (Batch) in.readObject();
                 }
-            } else {
-                if (comparisonResult == 0) {
-                    Tuple resultTuple = leftTuple.joinWith(rightTuple);
-                    nextBatch.add(resultTuple);
-                }
-                readNextRightTuple();
-                
-                if (isEndOfRightStream) {
-                    readNextLeftTuple(); 
-                    if (isEndOfLeftStream) {
-                        return nextBatch; 
+                for (i = lcurs; i < leftbatch.size(); ++i) {
+                    for (j = rcurs; j < rightbatch.size(); ++j) {
+                        Tuple lefttuple = leftbatch.get(i);
+                        Tuple righttuple = rightbatch.get(j);
+                        if (lefttuple.checkJoin(righttuple, leftindex, rightindex)) {
+                            Tuple outtuple = lefttuple.joinWith(righttuple);
+                            outbatch.add(outtuple);
+                            if (outbatch.isFull()) {
+                                if (i == leftbatch.size() - 1 && j == rightbatch.size() - 1) {  
+                                    lcurs = 0;
+                                    rcurs = 0;
+                                } else if (i != leftbatch.size() - 1 && j == rightbatch.size() - 1) {  
+                                    lcurs = i + 1;
+                                    rcurs = 0;
+                                } else if (i == leftbatch.size() - 1 && j != rightbatch.size() - 1) {  
+                                    lcurs = i;
+                                    rcurs = j + 1;
+                                } else {
+                                    lcurs = i;
+                                    rcurs = j + 1;
+                                }
+                                break;
+                            }
+                        }
                     }
-
-                    hasInitializedInputStream();
+                    rcurs = 0;
                 }
+                lcurs = 0;
             }
+        } catch (EOFException e) {
+            try {
+                in.close();
+            } catch (IOException io) {
+                System.out.println("SortMergeJoin: Error in reading temporary file");
+            }
+            lcurs = 0; 
+            eosr = true;
+        } catch (ClassNotFoundException c) {
+            System.out.println("SortMergeJoin: Error in deserialising temporary file ");
+            System.exit(1);
+        } catch (IOException io) {
+            System.out.println("SortMergeJoin: Error in reading temporary file");
+            System.exit(1);
         }
-
-        return nextBatch;
     }
-    */
 }
