@@ -27,7 +27,7 @@ public class SortMergeJoin extends Join {
     boolean eosl;                   // Whether end of stream (left table) is reached
     boolean eosr;                   // Whether end of stream (right table) is reached
 
-    int backtrackpointer;           // Find the minimum pointer for the right table
+    int gotopointer;                // Find the minimum pointer for the right table
     int newrcurs;                   // New right cursor for backtracking
     int tuplestoclear;              // Number of tuples to clear in the incoming left batch
 
@@ -63,7 +63,7 @@ public class SortMergeJoin extends Join {
         eosr = true;
 
         /** for backtracking purposes for the algorithm */
-        backtrackpointer = 0;
+        gotopointer = 0;
         newrcurs = 0;
         tuplestoclear = 0; 
 
@@ -113,7 +113,7 @@ public class SortMergeJoin extends Join {
                     in = new ObjectInputStream(new FileInputStream(rfname));
                     eosr = false;
 
-                    newrcurs = backtrackpointer;
+                    newrcurs = gotopointer;
                     while (newrcurs > 0) {
                         try {
                             rightbatch = (Batch) in.readObject();
@@ -154,7 +154,7 @@ public class SortMergeJoin extends Join {
                 if (rightbatch == null || rcurs >= rightbatch.size()) {
                     if (rightbatch != null) {
                         rcurs = 0;
-                        backtrackpointer += rightbatch.size(); 
+                        gotopointer += rightbatch.size(); 
                     }
                     rightbatch = (Batch) in.readObject();
                 }
