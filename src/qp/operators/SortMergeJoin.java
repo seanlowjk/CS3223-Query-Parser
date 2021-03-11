@@ -27,6 +27,8 @@ public class SortMergeJoin extends Join {
     boolean eosl;                   // Whether end of stream (left table) is reached
     boolean eosr;                   // Whether end of stream (right table) is reached
 
+    int backtrackpointer;           // Find the minimum pointer for the right table
+
     public SortMergeJoin(Join jn) {
         super(jn.getLeft(), jn.getRight(),  
             jn.getConditionList(), jn.getOpType());
@@ -58,6 +60,9 @@ public class SortMergeJoin extends Join {
         eosl = false;
         eosr = true;
 
+        /** for backtracking purposes for the algorithm */
+        backtrackpointer = 0;
+
         if (!right.open()) {
             return false;
         } else {
@@ -70,7 +75,7 @@ public class SortMergeJoin extends Join {
                 }
                 out.close();
             } catch (IOException io) {
-                System.out.println("BlockNestedJoin: Error writing to temporary file");
+                System.out.println("SortMergeJoin: Error writing to temporary file");
                 return false;
             }
             if (!right.close())
@@ -103,7 +108,7 @@ public class SortMergeJoin extends Join {
                     in = new ObjectInputStream(new FileInputStream(rfname));
                     eosr = false;
                 } catch (IOException io) {
-                    System.err.println("SortMergeJoin:error in reading the right file");
+                    System.err.println("SortMergeJoin: Error in reading the right file");
                     System.exit(1);
                 }
             }
@@ -148,6 +153,13 @@ public class SortMergeJoin extends Join {
                                     rcurs = j + 1;
                                 }
                                 break;
+                            }
+                        } else {
+                            int comparisonfactor = Tuple.compareTuples(lefttuple, righttuple, leftindex, rightindex);
+                            if (comparisonfactor > 0) {
+                                backtrackpointer++; 
+                            } else { // comparisonfacotr < 0;
+
                             }
                         }
                     }
