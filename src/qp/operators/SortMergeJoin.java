@@ -10,22 +10,23 @@ import java.util.ArrayList;
 import java.util.List; 
 
 public class SortMergeJoin extends Join {
-    private static final String FILE_HEADER = "SMtemp";
-    private File file;
+    static int filenum = 0;         // To get unique filenum for this operation
+    int batchsize;                  // Number of tuples per out batch
+    ArrayList<Integer> leftindex;   // Indices of the join attributes in left table
+    ArrayList<Integer> rightindex;  // Indices of the join attributes in right table
 
-    private int batchSize;
-    private List<Integer> leftAttrIndexes;
-    private List<Integer> rightAttrIndexes;
+    String lfname;                  // The file name where the left table is materialized 
+    String rfname;                  // The file name where the right table is materialized
+    
+    Batch outbatch;                 // Buffer page for output 
+    Batch leftbatch;                // Buffer block for left input stream
+    ObjectInputStream lin;          // File pointer to the right hand materialized file
+    Batch rightbatch;               // Buffer page for right input stream
+    ObjectInputStream rin;          // File pointer to the right hand materialized file
 
-    private Batch leftBatch;
-    private Batch rightBatch; 
-
-    private int leftPointer;
-    private int rightPointer;
-    private boolean isEndOfLeftStream;
-    private boolean isEndOfRightStream; 
-
-    private ObjectInputStream inputStream;
+    int rcurs;                      // Cursor for right side buffer
+    boolean eosl;                   // Whether end of stream (left table) is reached
+    boolean eosr;                   // Whether end of stream (right table) is reached
 
     public SortMergeJoin(Join jn) {
         super(jn.getLeft(), jn.getRight(),  
@@ -33,26 +34,35 @@ public class SortMergeJoin extends Join {
         schema = jn.getSchema();
         jointype = jn.getJoinType();
         numBuff = jn.getNumBuff();
-
-        int tuplesize = schema.getTupleSize();
-        batchSize = Batch.getPageSize() / tuplesize;
-        leftAttrIndexes = new ArrayList<>();
-        rightAttrIndexes = new ArrayList<>();
-
-        file = null;
-        leftBatch = null;
-        rightBatch = null;
-
-        leftPointer = 0;
-        rightPointer = 0;
-        isEndOfLeftStream = false;
-        isEndOfRightStream = false;
-
-        inputStream = null;
     }
 
     @Override
     public boolean open() {
+        /** select number of tuples per batch/page **/
+        int tuplesize = schema.getTupleSize();
+        batchsize = Batch.getPageSize() / tuplesize;
+
+        /** find indices attributes of join conditions **/
+        leftindex = new ArrayList<>();
+        rightindex = new ArrayList<>();
+        for (Condition con : conditionList) {
+            Attribute leftattr = con.getLhs();
+            Attribute rightattr = (Attribute) con.getRhs();
+            leftindex.add(left.getSchema().indexOf(leftattr));
+            rightindex.add(right.getSchema().indexOf(rightattr));
+        }
+        Batch rightpage;
+
+        /** initialize the cursors of input buffers **/
+        rcurs = 0;
+        eosl = false;
+        /** because right stream is to be repetitively scanned
+         ** if it reached end, we have to start new scan
+         **/
+        eosr = true;
+
+        inputStream = null;
+
         if (!left.open() || !right.open()) {
             return false;
         }
@@ -88,6 +98,7 @@ public class SortMergeJoin extends Join {
         return true;
     }
 
+    /*
     private Batch getNextBatch() {
         Batch nextBatch = new Batch(batchSize);
         if (!hasInitializedInputStream()) {
@@ -125,69 +136,5 @@ public class SortMergeJoin extends Join {
 
         return nextBatch;
     }
-
-    private void readNextLeftTuple() {
-        leftPointer ++;
-        if (leftPointer >= leftBatch.size()) {
-            readNextLeftBatch();
-            leftPointer = 0;
-        }
-    }
-
-    private void readNextLeftBatch() {
-        leftBatch = left.next();
-
-        if (leftBatch == null || leftBatch.size() == 0) {
-            isEndOfLeftStream = true; 
-        }
-    }
-
-    private void readNextRightTuple() {
-        rightPointer ++;
-        if (rightPointer >= rightBatch.size()) {
-            readNextRightBatch();
-            rightPointer = 0;
-        }
-    }
-
-    private void readNextRightBatch() {
-        try {
-            rightBatch = (Batch) inputStream.readObject();
-        } catch (Exception e) {
-            isEndOfRightStream = true; 
-            rightBatch = null;
-        }
-
-        if (rightBatch == null || rightBatch.size() == 0) {
-            rightBatch = null;
-            isEndOfRightStream = true; 
-        }
-    }
-
-    private boolean hasInitializedInputStream() {
-        try {
-            FileInputStream fileInputStream = new FileInputStream(file);
-            inputStream = new ObjectInputStream(fileInputStream);
-            readNextRightBatch();
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    private File getRelationBatches(Operator op) {
-        Batch batch;
-        try {
-            file = new File(FILE_HEADER);
-            FileOutputStream fileOutputStream = new FileOutputStream(file);
-            ObjectOutputStream outputStream = new ObjectOutputStream(fileOutputStream);
-            while ((batch = op.next()) != null) {
-                outputStream.writeObject(batch);
-            }
-            outputStream.close();
-            return file;
-        } catch (IOException io) {
-            return null; 
-        }
-    }
+    */
 }
