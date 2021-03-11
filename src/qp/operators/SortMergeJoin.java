@@ -124,10 +124,18 @@ public class SortMergeJoin extends Join {
 
         while (!outbatch.isFull()) {
             try {
+                if (lcurs == 0) {
+                    /** new left page is to be fetched**/
+                    leftbatch = (Batch) left.next();
+                    if (leftbatch == null) {
+                        eosl = true;
+                        return outbatch;
+                    }
+                }
 
                 if (eosr) {
                     try {
-                        in = new ObjectInputStream(new FileInputStream(rfname));
+                        rin = new ObjectInputStream(new FileInputStream(rfname));
                         eosr = false;
                     } catch (IOException io) {
                         System.err.println("SortMergeJoin:error in reading the right file");
