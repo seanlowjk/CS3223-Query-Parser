@@ -70,6 +70,10 @@ public class RandomInitialPlan {
             createOrderByOp();
         }
 
+        if (sqlquery.isSetOperation()) {
+            createSetOp();
+        }
+
         return root;
     }
 
@@ -197,6 +201,11 @@ public class RandomInitialPlan {
         root = new Sort(base, orderByList, BufferManager.getNumberOfBuffers(), isDescending, OpType.SORT);
         Schema newSchema = base.getSchema();
         root.setSchema(newSchema);
+    }
+
+    public void createSetOp() {
+        System.out.println("No Set Operation has been implemented.");
+        System.exit(1);
     }
 
     /**

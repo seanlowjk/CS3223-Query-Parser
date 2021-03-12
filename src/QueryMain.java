@@ -28,7 +28,34 @@ public class QueryMain {
         Batch.setPageSize(getPageSize(args, in));
 
         SQLQuery sqlquery = getSQLQuery(args[0]);
-        configureBufferManager(sqlquery.getNumJoin(), sqlquery.getNumOrder(), sqlquery.isDistinct(), args, in);
+
+        if (sqlquery.isSetOperation()) {
+            if (!sqlquery.isUnionCompatible()) {
+                System.out.println("Check your relations for union compatibility");
+                System.exit(1);
+            }
+
+            SQLQuery leftquery = sqlquery.getLeftQuery();
+            configureBufferManager(leftquery.getNumJoin(), leftquery.getNumOrder(), leftquery.isDistinct(), 
+                leftquery.isSetOperation(), args, in);
+            
+            Operator leftroot = getQueryPlan(leftquery);
+            printFinalPlan(leftroot);
+            proceedQuery(args, in);
+            double leftexecutiontime = executeQuery(leftroot);
+
+            SQLQuery rightquery = sqlquery.getRightQuery();
+            configureBufferManager(rightquery.getNumJoin(), rightquery.getNumOrder(), rightquery.isDistinct(), 
+                rightquery.isSetOperation(), args, in);
+            
+            Operator rightroot = getQueryPlan(rightquery);
+            printFinalPlan(rightroot);
+            proceedQuery(args, in);
+            double rightexecutiontime = executeQuery(rightroot);
+        } 
+
+        configureBufferManager(sqlquery.getNumJoin(), sqlquery.getNumOrder(), sqlquery.isDistinct(), 
+            sqlquery.isSetOperation(), args, in);
 
         Operator root = getQueryPlan(sqlquery);
         printFinalPlan(root);
@@ -88,8 +115,9 @@ public class QueryMain {
      * If there are joins then assigns buffers to each join operator while preparing the plan.
      * As buffer manager is not implemented, just input the number of buffers available.
      **/
-    private static void configureBufferManager(int numJoin, int numOrder, boolean isDistinct, String[] args, BufferedReader in) {
-        if (numJoin != 0 || numOrder != 0 || isDistinct) {
+    private static void configureBufferManager(int numJoin, int numOrder, boolean isDistinct, 
+        boolean isSetOp, String[] args, BufferedReader in) {
+        if (numJoin != 0 || numOrder != 0 || isDistinct || isSetOp) {
             int numBuff = 1000;
             if (args.length < 4) {
                 System.out.println("enter the number of buffers available");
