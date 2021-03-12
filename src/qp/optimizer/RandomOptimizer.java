@@ -11,7 +11,7 @@ import qp.utils.RandNumb;
 import qp.utils.SQLQuery;
 
 import java.util.ArrayList;
-import java.util.List; 
+import java.util.List;
 
 public class RandomOptimizer {
 
@@ -102,6 +102,10 @@ public class RandomOptimizer {
         } else if (node.getOpType() == OpType.DISTINCT) {
             Operator base = makeExecPlan(((Distinct) node).getBase());
             ((Distinct) node).setBase(base);
+            return node;
+        } else if (node.getOpType() == OpType.GROUPBY) {
+            Operator base = makeExecPlan(((GroupBy) node).getBase());
+            ((GroupBy) node).setBase(base);
             return node;
         } else {
             return node;
@@ -403,6 +407,8 @@ public class RandomOptimizer {
             return findNodeAt(((Sort) node).getBase(), joinNum);
         } else if (node.getOpType() == OpType.DISTINCT) {
             return findNodeAt(((Distinct) node).getBase(), joinNum);
+        } else if (node.getOpType() == OpType.GROUPBY) {
+            return findNodeAt(((GroupBy) node).getBase(), joinNum);
         } else {
             return null;
         }
@@ -436,6 +442,10 @@ public class RandomOptimizer {
             modifySchema(base);
             ArrayList attrlist = ((Distinct) node).getProjAttr();
             node.setSchema(base.getSchema().subSchema(attrlist));
+        } else if (node.getOpType() == OpType.GROUPBY) {
+            Operator base = ((GroupBy) node).getBase();
+            modifySchema(base);
+            node.setSchema(base.getSchema());
         }
     }
 }
