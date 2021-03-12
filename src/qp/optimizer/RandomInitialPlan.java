@@ -58,8 +58,8 @@ public class RandomInitialPlan {
         if (numJoin != 0) {
             createJoinOp();
         }
-        createProjectOp();
         createGroupByOp();
+        createProjectOp();
         createDistinctOp();
 
         if (orderByList.size() > 0) {
@@ -217,7 +217,7 @@ public class RandomInitialPlan {
         }
 
         Operator base = root;
-        root = new GroupBy(root, sqlquery.getGroupByList());
+        root = new GroupBy(base, sqlquery.getGroupByList());
         root.setSchema(base.getSchema());
     }
 
