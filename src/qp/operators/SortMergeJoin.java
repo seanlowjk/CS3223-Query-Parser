@@ -117,7 +117,7 @@ public class SortMergeJoin extends Join {
             }
 
             if (eosr) {
-                resetRightFile(backtrackpointer, backtrackcurs);
+                resetRightFile();
                 if (eosl) {
                     return outbatch;
                 } else {
@@ -235,15 +235,13 @@ public class SortMergeJoin extends Join {
             } catch (IOException io) {
                 System.out.println("SortMergeJoin: Error in reading temporary file");
             }
-            resetRightFile(backtrackpointer, backtrackcurs);
+            resetRightFile();
         }
     }
 
-    private void resetRightFile(int... args) {
+    private void resetRightFile() {
         // args[0] and args[1] return you the pointer you are supposed to backtrack to. 
-        if (args.length != 0) {
-            gotopointer = args[0] + args[1];
-        }
+        gotopointer = backtrackpointer + backtrackcurs;
         try {
             in = new ObjectInputStream(new FileInputStream(rfname));
             eosr = false;
