@@ -204,14 +204,20 @@ public class Distinct extends Operator {
 
             List<ObjectInputStream> sortedRunsOIS = BatchUtils.createInputStreams(sortedRunsFiles);
             int maxPages = Math.min(sortedRunsFiles.size(), numberOfAvailableBuffers);
-            int roundParts = (int) Math.ceil(sortedRunsFiles.size() / maxPages);
+            int roundParts = (int) Math.ceil(sortedRunsFiles.size() / (maxPages * 1.0));
 
             for (int i = 0; i < roundParts; i++) {
                 int[] interimBufferPointers = new int[maxPages];
 
                 // Initialise B - 1 buffer pages first
                 for (int j = 0; j < maxPages; j++) {
-                    Batch sortedBatch = BatchUtils.readBatch(sortedRunsOIS.get(j));
+                    int index = i * maxPages + j;
+
+                    if (index >= sortedRunsFiles.size()) {
+                        break;
+                    }
+
+                    Batch sortedBatch = BatchUtils.readBatch(sortedRunsOIS.get(index));
                     interimBuffer.add(sortedBatch);
                 }
 
@@ -228,6 +234,12 @@ public class Distinct extends Operator {
                     int batchId = 0;
 
                     for (int j = 0; j < maxPages; j++) {
+                        int index = i * maxPages + j;
+
+                        if (index >= sortedRunsFiles.size()) {
+                            break;
+                        }
+
                         Batch currBatch = interimBuffer.get(j);
 
                         // Check if the current sorted run has been exhausted
@@ -237,7 +249,7 @@ public class Distinct extends Operator {
 
                         // Retrieve the next batch of the same sorted run
                         if (interimBufferPointers[j] >= currBatch.size()) {
-                            currBatch = BatchUtils.readBatch(sortedRunsOIS.get(j));
+                            currBatch = BatchUtils.readBatch(sortedRunsOIS.get(index));
                             interimBuffer.set(j, currBatch);
                             interimBufferPointers[j] = 0;
                         }
