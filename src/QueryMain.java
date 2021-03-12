@@ -29,6 +29,8 @@ public class QueryMain {
 
         SQLQuery sqlquery = getSQLQuery(args[0]);
 
+        System.out.println(sqlquery.isSetOperation());
+
         if (sqlquery.isSetOperation()) {
             if (!sqlquery.isUnionCompatible()) {
                 System.out.println("Check your relations for union compatibility");

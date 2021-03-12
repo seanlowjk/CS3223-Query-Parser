@@ -30,7 +30,13 @@ public class SQLQuery {
     public SQLQuery(SQLQuery query1, SQLQuery query2) {
         leftQuery = query1;
         rightQuery = query2; 
-        projectList = leftQuery.getProjectList();
+        projectList = new ArrayList<>();
+        fromList = new ArrayList<>();
+        conditionList = new ArrayList<>();
+        joinList = new ArrayList<>();
+        groupbyList = new ArrayList<>();
+        orderbyList = new ArrayList<>();
+        selectionList = new ArrayList<>();
     }
 
     public SQLQuery(ArrayList<Attribute> list1, ArrayList<String> list2, ArrayList<Condition> list3) {

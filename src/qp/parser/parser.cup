@@ -10,7 +10,7 @@ import java.util.*;
 parser code {: 
 	
 	public SQLQuery query;
-	
+
 	public SQLQuery getSQLQuery() {
 		return query;
 	}
@@ -36,7 +36,7 @@ action code {:
 terminal TokenValue ID;
 terminal COMMA,LEFTBRACKET,RIGHTBRACKET,DOT,STAR;
 terminal LESSTHAN,GREATERTHAN,LTOE,GTOE,EQUAL,NOTEQUAL;
-terminal SELECT,FROM,WHERE,GROUPBY,ORDERBY,MAX,MIN,SUM,COUNT,AVG,DISTINCT,DESC;
+terminal SELECT,FROM,WHERE,GROUPBY,ORDERBY,INTERSECT,MAX,MIN,SUM,COUNT,AVG,DISTINCT,DESC;
 terminal TokenValue STRINGLIT;
 
 /* Non terminals */
@@ -50,7 +50,13 @@ nonterminal Condition condition;
 nonterminal Condition op;
 
 /* The grammar */
-finalquery ::= sqlquery:s
+finalquery ::= sqlquery:s INTERSECT sqlquery:t
+		{:
+			SQLQuery r = new SQLQuery(s, t);
+			parser.query = r;
+			RESULT = r;
+		:} 
+		| sqlquery:s
 		{:
 			parser.query = s;
 			RESULT = s;
