@@ -11,6 +11,7 @@ import qp.utils.RandNumb;
 import qp.utils.SQLQuery;
 
 import java.util.ArrayList;
+import java.util.List; 
 
 public class RandomOptimizer {
 
@@ -46,7 +47,7 @@ public class RandomOptimizer {
         if (node.getOpType() == OpType.JOIN) {
             Operator left = makeExecPlan(((Join) node).getLeft());
             Operator right = makeExecPlan(((Join) node).getRight());
-            int joinType = JoinType.NESTEDJOIN;
+            int joinType = ((Join) node).getJoinType();
             int numbuff = BufferManager.getBuffersPerJoin();
             switch (joinType) {
                 case JoinType.NESTEDJOIN:
@@ -61,6 +62,28 @@ public class RandomOptimizer {
                     bnj.setRight(right);
                     bnj.setNumBuff(numbuff);
                     return bnj;
+                case JoinType.SORTMERGE:
+                    SortMergeJoin sj = new SortMergeJoin((Join) node);
+                    List<Attribute> leftAttributes = new ArrayList<>();
+                    List<Attribute> rightAttributes = new ArrayList<>();
+
+                    for (Condition con : sj.getConditionList()) {
+                        Attribute leftattr = con.getLhs();
+                        Attribute rightattr = (Attribute) con.getRhs();
+                        leftAttributes.add(leftattr);
+                        rightAttributes.add(rightattr);
+                    }
+
+                    Sort leftSort = new Sort(left, leftAttributes, numbuff, false, OpType.SORT);
+                    leftSort.setSchema(left.getSchema());
+                    sj.setLeft(leftSort);
+
+                    Sort rightSort = new Sort(right, rightAttributes, numbuff, false, OpType.SORT);
+                    rightSort.setSchema(right.getSchema());
+                    sj.setRight(rightSort);
+
+                    sj.setNumBuff(numbuff);
+                    return sj;
                 default:
                     return node;
             }
@@ -75,6 +98,10 @@ public class RandomOptimizer {
         } else if (node.getOpType() == OpType.SORT) {
             Operator base = makeExecPlan(((Sort) node).getBase());
             ((Sort) node).setBase(base);
+            return node;
+        } else if (node.getOpType() == OpType.DISTINCT) {
+            Operator base = makeExecPlan(((Distinct) node).getBase());
+            ((Distinct) node).setBase(base);
             return node;
         } else {
             return node;
@@ -212,9 +239,9 @@ public class RandomOptimizer {
             /** find the node that is to be altered **/
             Join node = (Join) findNodeAt(root, joinNum);
             int prevJoinMeth = node.getJoinType();
-            int joinMeth = RandNumb.randInt(0, numJMeth - 1);
+            int joinMeth = JoinType.getValidJoinType(RandNumb.randInt(0, numJMeth - 1));
             while (joinMeth == prevJoinMeth) {
-                joinMeth = RandNumb.randInt(0, numJMeth - 1);
+                joinMeth = JoinType.getValidJoinType(RandNumb.randInt(0, numJMeth - 1));
             }
             node.setJoinType(joinMeth);
         }
@@ -374,6 +401,8 @@ public class RandomOptimizer {
             return findNodeAt(((Project) node).getBase(), joinNum);
         } else if (node.getOpType() == OpType.SORT) {
             return findNodeAt(((Sort) node).getBase(), joinNum);
+        } else if (node.getOpType() == OpType.DISTINCT) {
+            return findNodeAt(((Distinct) node).getBase(), joinNum);
         } else {
             return null;
         }
@@ -402,6 +431,11 @@ public class RandomOptimizer {
             Operator base = ((Sort) node).getBase();
             modifySchema(base);
             node.setSchema(base.getSchema());
+        } else if (node.getOpType() == OpType.DISTINCT) {
+            Operator base = ((Distinct) node).getBase();
+            modifySchema(base);
+            ArrayList attrlist = ((Distinct) node).getProjAttr();
+            node.setSchema(base.getSchema().subSchema(attrlist));
         }
     }
 }

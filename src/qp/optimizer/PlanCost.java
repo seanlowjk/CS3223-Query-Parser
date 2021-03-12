@@ -78,6 +78,8 @@ public class PlanCost {
             return getStatistics((Scan) node);
         } else if (node.getOpType() == OpType.SORT) {
             return getStatistics((Sort) node);
+        } else if (node.getOpType() == OpType.DISTINCT) {
+            return getStatistics((Distinct) node);
         }
         System.out.println("operator is not supported");
         isFeasible = false;
@@ -137,7 +139,7 @@ public class PlanCost {
         long outtuples = (long) Math.ceil(tuples);
 
         /** Calculate the cost of the operation **/
-        int joinType = JoinType.NESTEDJOIN;
+        int joinType = node.getJoinType();
         long numbuff = BufferManager.getBuffersPerJoin();
         long joincost;
 
@@ -147,6 +149,8 @@ public class PlanCost {
                 break;
             case JoinType.BLOCKNESTED:
                 joincost = (long)Math.ceil(leftpages/(numbuff -2)) * rightpages;
+            case JoinType.SORTMERGE:
+                joincost = leftpages * rightpages;
                 break;
             default:
                 System.out.println("join type is not supported");
@@ -275,6 +279,11 @@ public class PlanCost {
     private long getStatistics(Sort node) {
         cost += node.calculateTotalIOCost();
         return calculateCost(node.getBase());
+    }
+
+    protected long getStatistics(Distinct node) {
+        // TODO: Acually calculate the I/O cost
+        return 1000;
     }
 
 }
