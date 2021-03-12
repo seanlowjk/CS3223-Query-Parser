@@ -125,7 +125,8 @@ public class SortMergeJoin extends Join {
                         sosl = false;
                     } else {
                         readNextLeftTuple();
-                        if (tuplestoclear == 0) {
+                        if (lcurs >= leftbatch.size()) {
+                            lcurs = 0; 
                             continue;
                         }
                     }
@@ -223,7 +224,6 @@ public class SortMergeJoin extends Join {
         tuplestoclear--;
 
         if (tuplestoclear == 0) {
-            lcurs = 0; 
             return;
         } 
 
