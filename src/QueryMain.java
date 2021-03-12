@@ -33,7 +33,8 @@ public class QueryMain {
         Operator root = getQueryPlan(sqlquery);
         printFinalPlan(root);
         proceedQuery(args, in);
-        executeQuery(root, args[1]);
+        double executiontime = executeQuery(root);
+        printResults(root, executiontime, args[1]);
     }
 
     /**
@@ -158,12 +159,19 @@ public class QueryMain {
     /**
      * Execute query and print run statistics
      **/
-    public static double executeQuery(Operator root, String resultfile) {
+    private static double executeQuery(Operator root) {
         long starttime = System.currentTimeMillis();
         if (root.open() == false) {
             System.out.println("Root: Error in opening of root");
             System.exit(1);
         }
+        long endtime = System.currentTimeMillis();
+        double executiontime = (endtime - starttime) / 1000.0;
+        return executiontime;
+    }
+
+    private static void printResults(Operator root, double executiontime, String resultfile) {
+        long starttime = System.currentTimeMillis();
         try {
             out = new PrintWriter(new BufferedWriter(new FileWriter(resultfile)));
         } catch (IOException io) {
@@ -187,9 +195,8 @@ public class QueryMain {
         out.close();
 
         long endtime = System.currentTimeMillis();
-        double executiontime = (endtime - starttime) / 1000.0;
-        System.out.println("Execution time = " + executiontime);
-        return executiontime;
+        double totalexecutiontime = executiontime + ((endtime - starttime) / 1000.0);
+        System.out.println("Execution time = " + totalexecutiontime);
     }
 
     protected static void printSchema(Schema schema) {
