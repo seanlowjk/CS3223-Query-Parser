@@ -237,11 +237,13 @@ public class Sort extends Operator {
 
             // Condition where the merging of sorted runs should end only if 
             // all the sorted run files have been processed. 
-            while (roundNumber * numberOfAvailableBuffers < sortedRunsFiles.size()) {
-                int firstFileNumber = roundNumber * numberOfAvailableBuffers;
-                int numBuffersAllocated = Math.min(numberOfAvailableBuffers, sortedRunsFiles.size());
+            int pagesRead = 0; 
+            while (pagesRead < sortedRunsFiles.size()) {
+                int numBuffersAllocated = Math.min(numberOfAvailableBuffers, sortedRunsFiles.size() - pagesRead);
+
+                int firstFileNumber = pagesRead;
                 int lastFileNumber = firstFileNumber + numBuffersAllocated - 1;
-                
+
                 List<File> runsToMerge = new ArrayList<>();
                 for (int i = firstFileNumber; i <= lastFileNumber; i++) {
                     File sortedRun = sortedRunsFiles.get(i);
@@ -257,6 +259,7 @@ public class Sort extends Operator {
                 File combinedSortedRunFile = combineSortedRuns(runsToMerge, numBuffersAllocated, batchSize);
                 sortedRuns.add(combinedSortedRunFile);
 
+                pagesRead += numBuffersAllocated;
                 gotoNextRound();
             }
 
