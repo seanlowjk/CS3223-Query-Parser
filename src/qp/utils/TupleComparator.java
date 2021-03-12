@@ -1,6 +1,6 @@
 /**
- * Simple Comparator to compare between Tuples absed 
- * on the given list of attribute directions.  
+ * Simple Comparator to compare between Tuples absed
+ * on the given list of attribute directions.
  */
 
 package qp.utils;
@@ -32,7 +32,7 @@ public class TupleComparator implements Comparator<Tuple> {
             Attribute sortingAttribute = attributeDirection.getAttribute();
             int attributeIndex = schema.indexOf(sortingAttribute);
             assert attributeIndex != -1 : throwAttributeMissingError(sortingAttribute);
-            
+
             int comparisonResult = Tuple.compareTuples(tuple, other, attributeIndex);
             if (comparisonResult != 0) {
                 return comparisonMultipler * comparisonResult;

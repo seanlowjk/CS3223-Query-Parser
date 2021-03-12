@@ -37,7 +37,7 @@ public class QueryMain {
 
             SQLQuery leftquery = sqlquery.getLeftQuery();
             configureBufferManager(leftquery.getNumJoin(), leftquery.getNumOrder(), leftquery.isDistinct(), 
-                leftquery.isSetOperation(), args, in);
+                leftquery.isGroupBy(), leftquery.isSetOperation(), args, in);
             
             Operator leftroot = getQueryPlan(leftquery);
             printFinalPlan(leftroot);
@@ -46,7 +46,7 @@ public class QueryMain {
 
             SQLQuery rightquery = sqlquery.getRightQuery();
             configureBufferManager(rightquery.getNumJoin(), rightquery.getNumOrder(), rightquery.isDistinct(), 
-                rightquery.isSetOperation(), args, in);
+                rightquery.isGroupBy(), rightquery.isSetOperation(), args, in);
             
             Operator rightroot = getQueryPlan(rightquery);
             printFinalPlan(rightroot);
@@ -54,8 +54,8 @@ public class QueryMain {
             double rightexecutiontime = executeQuery(rightroot);
         } 
 
-        configureBufferManager(sqlquery.getNumJoin(), sqlquery.getNumOrder(), sqlquery.isDistinct(), 
-            sqlquery.isSetOperation(), args, in);
+        configureBufferManager(sqlquery.getNumJoin(), sqlquery.getNumOrder(),
+                sqlquery.isDistinct(), sqlquery.isGroupBy(), sqlquery.isSetOperation(), args, in);
 
         Operator root = getQueryPlan(sqlquery);
         printFinalPlan(root);
@@ -115,9 +115,10 @@ public class QueryMain {
      * If there are joins then assigns buffers to each join operator while preparing the plan.
      * As buffer manager is not implemented, just input the number of buffers available.
      **/
-    private static void configureBufferManager(int numJoin, int numOrder, boolean isDistinct, 
-        boolean isSetOp, String[] args, BufferedReader in) {
-        if (numJoin != 0 || numOrder != 0 || isDistinct || isSetOp) {
+    private static void configureBufferManager(int numJoin, int numOrder,
+            boolean isDistinct, boolean isGroupBy, boolean isSetOp, String[] args,
+            BufferedReader in) {
+        if (numJoin != 0 || numOrder != 0 || isDistinct || isGroupBy || isSetOp) {
             int numBuff = 1000;
             if (args.length < 4) {
                 System.out.println("enter the number of buffers available");
