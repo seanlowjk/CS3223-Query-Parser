@@ -10,22 +10,31 @@ import java.util.ArrayList;
 import java.util.List; 
 
 public class SortMergeJoin extends Join {
-    private static final String FILE_HEADER = "SMtemp";
-    private File file;
+    static int filenum = 0;         // To get unique filenum for this operation
+    int batchsize;                  // Number of tuples per out batch
+    ArrayList<Integer> leftindex;   // Indices of the join attributes in left table
+    ArrayList<Integer> rightindex;  // Indices of the join attributes in right table
 
-    private int batchSize;
-    private List<Integer> leftAttrIndexes;
-    private List<Integer> rightAttrIndexes;
+    String rfname;                  // The file name where the right table is materialized
+    
+    Batch outbatch;                 // Buffer page for output 
+    Batch leftbatch;                // Buffer block for left input stream
+    Batch rightbatch;               // Buffer page for right input stream
+    ObjectInputStream in;          // File pointer to the right hand materialized file
 
-    private Batch leftBatch;
-    private Batch rightBatch; 
+    int lcurs;                      // Cursor for left side buffer 
+    int rcurs;                      // Cursor for right side buffer
+    boolean eosl;                   // Whether end of stream (left table) is reached
+    boolean eosr;                   // Whether end of stream (right table) is reached
+    boolean sosl;                   // Signifies start of reading from stream (left table)
 
-    private int leftPointer;
-    private int rightPointer;
-    private boolean isEndOfLeftStream;
-    private boolean isEndOfRightStream; 
+    int gotopointer;                // Find the minimum pointer for the right table
+    int newrcurs;                   // New right cursor for backtracking
+    int tuplestoclear;              // Number of tuples to clear in the incoming left batch
 
-    private ObjectInputStream inputStream;
+    int backtrackpointer;
+    int backtrackcurs;
+    Tuple prevtuple; 
 
     public SortMergeJoin(Join jn) {
         super(jn.getLeft(), jn.getRight(),  
@@ -33,161 +42,229 @@ public class SortMergeJoin extends Join {
         schema = jn.getSchema();
         jointype = jn.getJoinType();
         numBuff = jn.getNumBuff();
-
-        int tuplesize = schema.getTupleSize();
-        batchSize = Batch.getPageSize() / tuplesize;
-        leftAttrIndexes = new ArrayList<>();
-        rightAttrIndexes = new ArrayList<>();
-
-        file = null;
-        leftBatch = null;
-        rightBatch = null;
-
-        leftPointer = 0;
-        rightPointer = 0;
-        isEndOfLeftStream = false;
-        isEndOfRightStream = false;
-
-        inputStream = null;
     }
 
     @Override
     public boolean open() {
-        if (!left.open() || !right.open()) {
-            return false;
-        }
+        /** select number of tuples per batch/page **/
+        int tuplesize = schema.getTupleSize();
+        batchsize = Batch.getPageSize() / tuplesize;
 
+        /** find indices attributes of join conditions **/
+        leftindex = new ArrayList<>();
+        rightindex = new ArrayList<>();
         for (Condition con : conditionList) {
             Attribute leftattr = con.getLhs();
             Attribute rightattr = (Attribute) con.getRhs();
-            leftAttrIndexes.add(left.getSchema().indexOf(leftattr));
-            rightAttrIndexes.add(right.getSchema().indexOf(rightattr));
+            leftindex.add(left.getSchema().indexOf(leftattr));
+            rightindex.add(right.getSchema().indexOf(rightattr));
+        }
+        Batch rightpage;
+
+        /** initialize the cursors of input buffers **/
+        lcurs = 0; 
+        rcurs = 0;
+        eosl = false;
+        eosr = true;
+        sosl = true;
+
+        /** for traversing the right file for the algorithm */
+        gotopointer = 0;
+        newrcurs = 0;
+        tuplestoclear = 0; 
+
+        /** for backtracking purposes */
+        backtrackpointer = 0;
+        backtrackcurs = 0;
+        prevtuple = null;
+
+        if (!right.open()) {
+            return false;
+        } else {
+            filenum++;
+            rfname = "SMJtemp-" + String.valueOf(filenum);
+            try {
+                ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(rfname));
+                while ((rightpage = right.next()) != null) {
+                    out.writeObject(rightpage);
+                }
+                out.close();
+            } catch (IOException io) {
+                System.out.println("SortMergeJoin: Error writing to temporary file");
+                return false;
+            }
+            if (!right.close())
+                return false;
         }
 
-        file = getRelationBatches(right);
-        readNextLeftBatch();
-        return true; 
+        return left.open();
     }
 
     @Override
     public Batch next() {
-        if (isEndOfLeftStream) {
+        outbatch = new Batch(batchsize);
+
+        if (eosl) {
             return null;
         }
 
-        return getNextBatch();
+        while (!outbatch.isFull()) {
+            if (lcurs == 0 && tuplestoclear == 0) {
+                /** new left page is to be fetched**/
+                if (!readNextLeftBatch()) {
+                    return outbatch;
+                }
+            }
+
+            if (eosr) {
+                resetRightFile();
+                if (eosl) {
+                    return outbatch;
+                } else {
+                    if (sosl) {
+                        sosl = false;
+                    } else {
+                        readNextLeftTuple();
+                        if (lcurs >= leftbatch.size()) {
+                            lcurs = 0; 
+                            continue;
+                        }
+                    }
+
+
+                }
+            }
+            getJoinBatch();
+            if (lcurs >= leftbatch.size()) {
+                lcurs = 0;
+            }
+        }
+        return outbatch;
     }
 
     @Override
     public boolean close() {
-        file.delete();
-
-        if (!left.close() || !right.close()) {
-            return false;
-        }
-        return true;
+        File rf = new File(rfname);
+        rf.delete();
+        return left.close() && right.close();
     }
 
-    private Batch getNextBatch() {
-        Batch nextBatch = new Batch(batchSize);
-        if (!hasInitializedInputStream()) {
-            return null; 
-        }
-
-        while (!nextBatch.isFull()) {
-            Tuple leftTuple = leftBatch.get(leftPointer);
-            Tuple rightTuple = rightBatch.get(rightPointer);
-            int comparisonResult = Tuple.compareTuples(leftTuple, rightTuple, 
-                leftAttrIndexes, rightAttrIndexes);
-            if (comparisonResult < 0) {
-                hasInitializedInputStream();
-                readNextLeftTuple();
-                if (isEndOfLeftStream) {
-                    return nextBatch; 
-                }
-            } else {
-                if (comparisonResult == 0) {
-                    Tuple resultTuple = leftTuple.joinWith(rightTuple);
-                    nextBatch.add(resultTuple);
-                }
-                readNextRightTuple();
-                
-                if (isEndOfRightStream) {
-                    readNextLeftTuple(); 
-                    if (isEndOfLeftStream) {
-                        return nextBatch; 
+    private void getJoinBatch() {
+        try {
+            while (!eosr) {
+                if (rightbatch == null || rcurs >= rightbatch.size()) {
+                    if (rightbatch != null) {
+                        rcurs = 0;
+                        gotopointer += rightbatch.size(); 
                     }
+                    rightbatch = (Batch) in.readObject();
+                }
 
-                    hasInitializedInputStream();
+                while (rcurs < rightbatch.size()) {
+                    Tuple lefttuple = leftbatch.get(lcurs);
+                    Tuple righttuple = rightbatch.get(rcurs);
+                    if (lefttuple.checkJoin(righttuple, leftindex, rightindex)) {
+                        // Update the backtracker 
+                        if (prevtuple == null || !prevtuple.checkJoin(lefttuple, leftindex, leftindex)) {
+                            prevtuple = lefttuple;
+                            backtrackpointer = gotopointer;
+                            backtrackcurs = rcurs;
+                        }
+
+                        Tuple outtuple = lefttuple.joinWith(righttuple);
+                        outbatch.add(outtuple);
+                        rcurs++;
+                        if (outbatch.isFull()) {
+                            return;
+                        }
+                    } else {
+                        int comparisonfactor = Tuple.compareTuples(lefttuple, righttuple, leftindex, rightindex);
+                        if (comparisonfactor > 0) {
+                            rcurs++;
+                        } else { // comparisonfacotr < 0;
+                            readNextLeftTuple();
+                            if (lcurs >= leftbatch.size()) {
+                                return;
+                            } else {
+                                break;
+                            }
+                        }
+                    }
                 }
             }
+        } catch (EOFException e) {
+            try {
+                in.close();
+            } catch (IOException io) {
+                System.out.println("SortMergeJoin: Error in reading temporary file");
+            }
+            eosr = true;
+        } catch (ClassNotFoundException c) {
+            System.out.println("SortMergeJoin: Error in deserialising temporary file ");
+            System.exit(1);
+        } catch (IOException io) {
+            System.out.println("SortMergeJoin: Error in reading temporary file");
+            System.exit(1);
         }
+    }
 
-        return nextBatch;
+    private boolean readNextLeftBatch() {
+        /** new left page is to be fetched**/
+        leftbatch = (Batch) left.next();
+        if (leftbatch == null) {
+            eosl = true;
+            return false;
+        }
+        tuplestoclear = leftbatch.size(); 
+        return true; 
     }
 
     private void readNextLeftTuple() {
-        leftPointer ++;
-        if (leftPointer >= leftBatch.size()) {
-            readNextLeftBatch();
-            leftPointer = 0;
-        }
-    }
+        lcurs++;
+        tuplestoclear--;
 
-    private void readNextLeftBatch() {
-        leftBatch = left.next();
+        if (tuplestoclear == 0) {
+            return;
+        } 
 
-        if (leftBatch == null || leftBatch.size() == 0) {
-            isEndOfLeftStream = true; 
-        }
-    }
-
-    private void readNextRightTuple() {
-        rightPointer ++;
-        if (rightPointer >= rightBatch.size()) {
-            readNextRightBatch();
-            rightPointer = 0;
-        }
-    }
-
-    private void readNextRightBatch() {
-        try {
-            rightBatch = (Batch) inputStream.readObject();
-        } catch (Exception e) {
-            isEndOfRightStream = true; 
-            rightBatch = null;
-        }
-
-        if (rightBatch == null || rightBatch.size() == 0) {
-            rightBatch = null;
-            isEndOfRightStream = true; 
-        }
-    }
-
-    private boolean hasInitializedInputStream() {
-        try {
-            FileInputStream fileInputStream = new FileInputStream(file);
-            inputStream = new ObjectInputStream(fileInputStream);
-            readNextRightBatch();
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    private File getRelationBatches(Operator op) {
-        Batch batch;
-        try {
-            file = new File(FILE_HEADER);
-            FileOutputStream fileOutputStream = new FileOutputStream(file);
-            ObjectOutputStream outputStream = new ObjectOutputStream(fileOutputStream);
-            while ((batch = op.next()) != null) {
-                outputStream.writeObject(batch);
+        // Confirm with the backtracker 
+        Tuple nexttuple = leftbatch.get(lcurs);
+        if (prevtuple != null && nexttuple.checkJoin(prevtuple, leftindex, leftindex)) {
+            try {
+                in.close();
+            } catch (IOException io) {
+                System.out.println("SortMergeJoin: Error in reading temporary file");
             }
-            outputStream.close();
-            return file;
+            resetRightFile();
+        }
+    }
+
+    private void resetRightFile() {
+        // args[0] and args[1] return you the pointer you are supposed to backtrack to. 
+        gotopointer = backtrackpointer + backtrackcurs;
+        try {
+            in = new ObjectInputStream(new FileInputStream(rfname));
+            eosr = false;
+
+            newrcurs = gotopointer;
+            while (newrcurs > 0) {
+                try {
+                    rightbatch = (Batch) in.readObject();
+                } catch (Exception e) {
+                    eosr = true;
+                    return;
+                }
+
+                if (newrcurs > rightbatch.size()) {
+                    newrcurs -= rightbatch.size();
+                } else {
+                    rcurs = newrcurs;
+                    break;
+                }
+            }
         } catch (IOException io) {
-            return null; 
+            System.err.println("SortMergeJoin: Error in reading the right file");
+            System.exit(1);
         }
     }
 }
