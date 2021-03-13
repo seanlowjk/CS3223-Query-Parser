@@ -147,10 +147,7 @@ public class Project extends Operator {
             ArrayList<Integer> grpSize = new ArrayList<Integer>();
 
             ArrayList<ArrayList<Object>> tupleData = new ArrayList<ArrayList<Object>>();
-            while(inbatch != null) {
 
-
-            }
 
         } else {
 
@@ -165,55 +162,92 @@ public class Project extends Operator {
     }
 
     public void genGrp() {
+
+        inbatch = base.next();
+
         int inputBuffers = numOfBuffers - 1;
         int blockCount = 0;
         buffer.clear();
 
         Batch bufferBatch =  new Batch(batchsize);
         Tuple prevBatchLastTuple = null;
-        for(int i = 0; i < inputBuffers; i++) {
+        boolean isSameGrp = false;
+        while (inbatch != null) {
+            for (int i = 0; i < inputBuffers; i++) {
 
-            if(inbatch == null || inbatch.size() == indexInBatch +1) {
-                inbatch = base.next();
-                if(inbatch == null) {
+                if (inbatch == null) {
                     return;
                 }
-                indexInBatch = 0;
-            }
 
-            for(int j = indexInBatch; indexInBatch < inbatch.size(); j++) {
-                if(!bufferBatch.isEmpty()) {
-                  Tuple grpTuple = bufferBatch.get(0); //compare the currTuple to a tuple thats in the grp
-                  Tuple currTuple = inbatch.get(j);
-
-                  if(((GroupBy)base).compare(grpTuple, currTuple) != 0) {
-                      indexInBatch = j;
-                      break;
+                if(inbatch.size() == indexInBatch) {
+                    inbatch = base.next();
+                    if (inbatch == null) {
+                        return;
                     }
-                } else if (!buffer.isEmpty()) {
-                    Tuple currTuple = inbatch.get(j);
-                    if(((GroupBy)base).compare(prevBatchLastTuple, currTuple) != 0) {
-                        indexInBatch = j;
-                        break;
-                    }
+                    indexInBatch = 0;
                 }
 
-                bufferBatch.add(inbatch.get(j));
+                for (int j = indexInBatch; indexInBatch < inbatch.size(); j++) {
+                    if (!bufferBatch.isEmpty()) {
+                        Tuple grpTuple = bufferBatch.get(0); //compare the currTuple to a tuple thats in the grp
+                        Tuple currTuple = inbatch.get(j);
 
-                if(bufferBatch.isFull()) {
-                    prevBatchLastTuple = inbatch.get(j);
-                    buffer.add(bufferBatch);
-                    bufferBatch = new Batch(batchsize);
+                        if (((GroupBy) base).compare(grpTuple, currTuple) != 0) {
+                            indexInBatch = j;
+                            isSameGrp = false;
+                            break;
+                        }
+                    } else if (!buffer.isEmpty()) {
+                        Tuple currTuple = inbatch.get(j);
+                        if (((GroupBy) base).compare(prevBatchLastTuple, currTuple) != 0) {
+                            indexInBatch = j;
+                            isSameGrp = false;
+                            break;
+                        }
+                    }
 
+                    bufferBatch.add(inbatch.get(j));
+
+                    if (bufferBatch.isFull()) {
+                        prevBatchLastTuple = inbatch.get(j);
+                        buffer.add(bufferBatch);
+                        bufferBatch = new Batch(batchsize);
+
+                    }
+                    indexInBatch++;
                 }
-                indexInBatch++;
+
+                if(isSameGrp) {
+                    inputBuffers++;
+                } else {
+                    //another grp but in same batch
+                    //write out all the remaining in current
+                    break;
+                }
+
             }
+            writeGrpBlocks(blockCount);
+            buffer.clear();
+            blockCount++;
 
-            inputBuffers++;
-
+            //different grp
+            if(inbatch!= null && !isSameGrp) {
+               //init relevant info for looping next group
+                blockCount = 0;
+                if(indexInBatch == inbatch.size()) {
+                    inbatch = ((GroupBy) base).next();
+                    indexInBatch = 0;
+                }
+                isSameGrp = true;
+                bufferBatch = new Batch(batchsize);
+                grpCount++;
+            }
         }
-        blockCount++;
-        //writeout batch
+
+    }
+
+    public void writeGrpBlocks(int blockCount) {
+
         if(grpFiles == null) {
             grpFiles = new HashMap<Integer, ArrayList<File>>();
         }
@@ -230,15 +264,8 @@ public class Project extends Operator {
             files.add(grpFile);
             grpFiles.put(grpCount, files);
         }
-
-        //check if group spans > 1 block
-        if(inbatch!= null &&
-                ((GroupBy)base).compare(buffer.get(0).get(0), inbatch.get(indexInBatch)) == 0) {
-            genGrp();
-        }
-
-        grpCount++;
     }
+
     /**
      * Close the operator
      */
