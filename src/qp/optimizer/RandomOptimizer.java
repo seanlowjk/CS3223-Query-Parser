@@ -45,8 +45,8 @@ public class RandomOptimizer {
      **/
     public static Operator makeExecPlan(Operator node) {
         if (node.getOpType() == OpType.INTERSECT) {
-            Operator left = makeExecPlan(((SetOperator) node).getLeft());
-            Operator right = makeExecPlan(((SetOperator) node).getRight());
+            Operator left = (((SetOperator) node).getLeft());
+            Operator right = (((SetOperator) node).getRight());
             int numbuff = BufferManager.getNumberOfBuffers();
             Intersect ij = new Intersect(left, right, OpType.INTERSECT);
             ij.setLeft(left);
