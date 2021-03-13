@@ -116,18 +116,22 @@ public class Sort extends Operator {
      * Returns the total I/O cost, which is represented by
      * 2 X |R| X numberOfPasses.
      */
-    public int calculateTotalIOCost() {
-        return 2 * numberOfPages + calculateNumberOfPasses();
+    public static int calculateTotalIOCost(int numberOfPages, int numberOfBuffers) {
+        return 2 * numberOfPages + calculateNumberOfPasses(numberOfPages, numberOfBuffers);
     }
 
     /**
      * Calculates the number of passes needed for the generatedSortedRuns and
      * mergeSortedRuns phases.
      */
-    private int calculateNumberOfPasses() {
+    private static int calculateNumberOfPasses(int numberOfPages, int numberOfBuffers) {
         double numberOfOriginalSortedRuns = Math.ceil(numberOfPages / (1.0 * numberOfBuffers));
         int numPasses = 1 + (int) Math.ceil(Math.log(numberOfOriginalSortedRuns) / Math.log(numberOfPages -1));
         return numPasses;
+    }
+
+    public int getNumberOfPages() {
+        return this.numberOfPages;
     }
 
     /**
@@ -231,11 +235,13 @@ public class Sort extends Operator {
         while (sortedRunsFiles.size() > 1) {
             List<File> sortedRuns = new ArrayList<>();
 
-            // Condition where the merging of sorted runs should end only if
-            // all the sorted run files have been processed.
-            while (roundNumber * numberOfAvailableBuffers < sortedRunsFiles.size()) {
-                int firstFileNumber = roundNumber * numberOfAvailableBuffers;
-                int numBuffersAllocated = Math.min(numberOfAvailableBuffers, sortedRunsFiles.size());
+            // Condition where the merging of sorted runs should end only if 
+            // all the sorted run files have been processed. 
+            int pagesRead = 0; 
+            while (pagesRead < sortedRunsFiles.size()) {
+                int numBuffersAllocated = Math.min(numberOfAvailableBuffers, sortedRunsFiles.size() - pagesRead);
+
+                int firstFileNumber = pagesRead;
                 int lastFileNumber = firstFileNumber + numBuffersAllocated - 1;
 
                 List<File> runsToMerge = new ArrayList<>();
@@ -253,6 +259,7 @@ public class Sort extends Operator {
                 File combinedSortedRunFile = combineSortedRuns(runsToMerge, numBuffersAllocated, batchSize);
                 sortedRuns.add(combinedSortedRunFile);
 
+                pagesRead += numBuffersAllocated;
                 gotoNextRound();
             }
 

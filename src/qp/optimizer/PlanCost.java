@@ -152,7 +152,9 @@ public class PlanCost {
             case JoinType.BLOCKNESTED:
                 joincost = (long)Math.ceil(leftpages/(numbuff -2)) * rightpages;
             case JoinType.SORTMERGE:
-                joincost = leftpages * rightpages;
+                joincost =  Sort.calculateTotalIOCost((int) leftpages, (int) numbuff) 
+                    + Sort.calculateTotalIOCost((int) rightpages, (int) numbuff)
+                    + leftpages + rightpages;
                 break;
             default:
                 System.out.println("join type is not supported");
@@ -279,7 +281,10 @@ public class PlanCost {
     }
 
     private long getStatistics(Sort node) {
-        cost += node.calculateTotalIOCost();
+        int numpages = node.getNumberOfPages();
+        int numbuff = BufferManager.getBuffersPerJoin();
+
+        cost += Sort.calculateTotalIOCost(numpages, numbuff);
         return calculateCost(node.getBase());
     }
 
@@ -294,14 +299,3 @@ public class PlanCost {
     }
 
 }
-
-
-
-
-
-
-
-
-
-
-
