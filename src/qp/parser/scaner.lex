@@ -54,6 +54,11 @@ STRING_LITERAL=\"{CHAR}*\"
   return new Symbol(sym.INTERSECT,yyline,yychar,new TokenValue(yytext()));
 }
 
+<YYINITIAL,NEGATE> ALL {
+  yybegin(YYINITIAL);
+  return new Symbol(sym.ALL,yyline,yychar,new TokenValue(yytext()));
+}
+
 <YYINITIAL,NEGATE> GROUPBY {
   yybegin(YYINITIAL);
   return new Symbol(sym.GROUPBY,yyline,yychar,new TokenValue(yytext()));

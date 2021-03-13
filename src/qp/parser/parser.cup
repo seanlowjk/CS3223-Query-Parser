@@ -36,7 +36,7 @@ action code {:
 terminal TokenValue ID;
 terminal COMMA,LEFTBRACKET,RIGHTBRACKET,DOT,STAR;
 terminal LESSTHAN,GREATERTHAN,LTOE,GTOE,EQUAL,NOTEQUAL;
-terminal SELECT,FROM,WHERE,GROUPBY,ORDERBY,INTERSECT,MAX,MIN,SUM,COUNT,AVG,DISTINCT,DESC;
+terminal SELECT,FROM,WHERE,GROUPBY,ORDERBY,INTERSECT,ALL,MAX,MIN,SUM,COUNT,AVG,DISTINCT,DESC;
 terminal TokenValue STRINGLIT;
 
 /* Non terminals */
@@ -51,7 +51,7 @@ nonterminal Condition condition;
 nonterminal Condition op;
 
 /* The grammar */
-mainquery ::= finalquery:s INTERSECT finalquery:t
+mainquery ::= finalquery:s INTERSECT ALL finalquery:t
 		{:
 			SQLQuery r = new SQLQuery(s, t);
 			parser.query = r;
