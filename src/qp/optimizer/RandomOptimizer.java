@@ -44,7 +44,16 @@ public class RandomOptimizer {
      * * corresponding join operator implementation
      **/
     public static Operator makeExecPlan(Operator node) {
-        if (node.getOpType() == OpType.JOIN) {
+        if (node.getOpType() == OpType.INTERSECT) {
+            Operator left = ((SetOperator) node).getLeft();
+            Operator right = ((SetOperator) node).getRight();
+            int numbuff = BufferManager.getNumberOfBuffers();
+            Intersect ij = new Intersect((SetOperator) node);
+            ij.setLeft(left);
+            ij.setRight(right);
+            ij.setNumBuff(numbuff);
+            return ij;
+        } else if (node.getOpType() == OpType.JOIN) {
             Operator left = makeExecPlan(((Join) node).getLeft());
             Operator right = makeExecPlan(((Join) node).getRight());
             int joinType = ((Join) node).getJoinType();
@@ -137,8 +146,9 @@ public class RandomOptimizer {
 
     /**
      * Implementation of Iterative Improvement Algorithm for Randomized optimization of Query Plan
+     * @param operators additional operators provided if it's a set operation 
      **/
-    public Operator getOptimizedPlan() {
+    public Operator getOptimizedPlan(Operator... operators) {
         /** get an initial plan for the given sql query **/
         RandomInitialPlan rip = new RandomInitialPlan(sqlquery);
         numJoin = rip.getNumJoins();
@@ -158,7 +168,7 @@ public class RandomOptimizer {
          *  has satisfied
          **/
         for (int j = 0; j < NUMITER; ++j) {
-            Operator initPlan = rip.prepareInitialPlan();
+            Operator initPlan = rip.prepareInitialPlan(operators);
             modifySchema(initPlan);
             System.out.println("-----------initial Plan-------------");
             Debug.PPrint(initPlan);

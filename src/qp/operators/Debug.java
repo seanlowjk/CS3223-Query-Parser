@@ -80,7 +80,13 @@ public class Debug {
     public static void PPrint(Operator node) {
         int optype = node.getOpType();
 
-        if (optype == OpType.JOIN) {
+        if (optype == OpType.INTERSECT) {
+            System.out.print("Intersect(");
+            PPrint(((Intersect) node).getLeft());
+            System.out.print("  with ");
+            PPrint(((Intersect) node).getRight());
+            System.out.print(")");
+        } else if (optype == OpType.JOIN) {
             int exprtype = ((Join) node).getJoinType();
             switch (exprtype) {
                 case JoinType.NESTEDJOIN:

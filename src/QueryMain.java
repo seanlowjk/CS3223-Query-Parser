@@ -52,7 +52,7 @@ public class QueryMain {
             configureBufferManager(sqlquery.getNumJoin(), sqlquery.getNumOrder(),   
                 sqlquery.isDistinct(), sqlquery.isGroupBy(), sqlquery.isSetOperation(), args, in);
 
-            Operator root = getQueryPlan(sqlquery);
+            Operator root = getQueryPlan(sqlquery, leftroot, rightroot);
             printFinalPlan(root);
             proceedQuery(args, in);
             double executiontime = executeQuery(root);
@@ -143,6 +143,26 @@ public class QueryMain {
             System.out.println("Minimum 3 buffers are required per join operator ");
             System.exit(1);
         }
+    }
+    
+    /**
+     * Run optimiser and get the final query plan as an Operator
+     * This is an overloaded function for Set Operations 
+     **/
+    public static Operator getQueryPlan(SQLQuery sqlquery, Operator left, Operator right) {
+        Operator root = null;
+
+        RandomOptimizer optimizer = new RandomOptimizer(sqlquery);
+        Operator planroot = optimizer.getOptimizedPlan(left, right);
+
+        if (planroot == null) {
+            System.out.println("DPOptimizer: query plan is null");
+            System.exit(1);
+        }
+
+        root = RandomOptimizer.makeExecPlan(planroot);
+
+        return root;
     }
 
     /**
