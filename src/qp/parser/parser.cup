@@ -40,6 +40,7 @@ terminal SELECT,FROM,WHERE,GROUPBY,ORDERBY,INTERSECT,MAX,MIN,SUM,COUNT,AVG,DISTI
 terminal TokenValue STRINGLIT;
 
 /* Non terminals */
+nonterminal SQLQuery mainquery; 
 nonterminal SQLQuery finalquery;
 nonterminal SQLQuery sqlquery;
 nonterminal ArrayList attlist;
@@ -50,13 +51,15 @@ nonterminal Condition condition;
 nonterminal Condition op;
 
 /* The grammar */
-finalquery ::= sqlquery:s INTERSECT sqlquery:t
+mainquery ::= finalquery:s INTERSECT finalquery:t
 		{:
 			SQLQuery r = new SQLQuery(s, t);
 			parser.query = r;
 			RESULT = r;
 		:} 
-		| sqlquery:s
+		;
+
+finalquery ::= sqlquery:s
 		{:
 			parser.query = s;
 			RESULT = s;
