@@ -59,12 +59,13 @@ public class RandomInitialPlan {
             createJoinOp();
         }
         createGroupByOp();
-        createProjectOp();
-        createDistinctOp();
 
         if (orderByList.size() > 0) {
             createOrderByOp();
         }
+
+        createProjectOp();
+        createDistinctOp();
 
         if (sqlquery.isSetOperation()) {
             createSetOp();
