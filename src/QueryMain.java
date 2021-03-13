@@ -38,16 +38,22 @@ public class QueryMain {
             SQLQuery leftquery = sqlquery.getLeftQuery();
             configureBufferManager(leftquery.getNumJoin(), leftquery.getNumOrder(), leftquery.isDistinct(), 
                 leftquery.isGroupBy(), leftquery.isSetOperation(), args, in);
-            
+        
+            System.out.println("=================left set operand=====");
             Operator leftroot = getQueryPlan(leftquery);
+            proceedQuery(args, in);
             double leftexecutiontime = executeQuery(leftroot);
+            System.out.println("==========end of left set operand=====\n");
 
             SQLQuery rightquery = sqlquery.getRightQuery();
             configureBufferManager(rightquery.getNumJoin(), rightquery.getNumOrder(), rightquery.isDistinct(), 
                 rightquery.isGroupBy(), rightquery.isSetOperation(), args, in);
             
+            System.out.println("=================right set operand=====");
             Operator rightroot = getQueryPlan(rightquery);
+            proceedQuery(args, in);
             double rightexecutiontime = executeQuery(rightroot);
+            System.out.println("==========end of right set operand=====\n");
 
             configureBufferManager(sqlquery.getNumJoin(), sqlquery.getNumOrder(),   
                 sqlquery.isDistinct(), sqlquery.isGroupBy(), sqlquery.isSetOperation(), args, in);
@@ -56,7 +62,7 @@ public class QueryMain {
             printFinalPlan(root);
             proceedQuery(args, in);
             double executiontime = executeQuery(root);
-            printResults(root, executiontime, args[1]);
+            printResults(root, leftexecutiontime + rightexecutiontime + executiontime, args[1]);
         } else {
             configureBufferManager(sqlquery.getNumJoin(), sqlquery.getNumOrder(),   
                 sqlquery.isDistinct(), sqlquery.isGroupBy(), sqlquery.isSetOperation(), args, in);
@@ -250,7 +256,7 @@ public class QueryMain {
 
         long endtime = System.currentTimeMillis();
         double totalexecutiontime = executiontime + ((endtime - starttime) / 1000.0);
-        System.out.println("Execution time = " + totalexecutiontime);
+        System.out.printf("Execution time = %.4f\n", totalexecutiontime);
     }
 
     protected static void printSchema(Schema schema) {

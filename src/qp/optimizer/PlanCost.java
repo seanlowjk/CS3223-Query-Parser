@@ -102,7 +102,7 @@ public class PlanCost {
      * Calculate the statistics and cost of intersect operation 
      */
     protected long getStatistics(Intersect node) {
-                long lefttuples = calculateCost(node.getLeft());
+        long lefttuples = calculateCost(node.getLeft());
         long righttuples = calculateCost(node.getRight());
 
         if (!isFeasible) {

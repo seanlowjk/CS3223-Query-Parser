@@ -205,7 +205,7 @@ public class RandomInitialPlan {
     public void createSetOp(Operator... operators) {
         Operator left = operators[0];
         Operator right = operators[1];
-        root = new Intersect(new SetOperator(left, right, OpType.INTERSECT));
+        root = new Intersect(left, right, OpType.INTERSECT);
         Schema newSchema = left.getSchema();
         root.setSchema(newSchema);
     }

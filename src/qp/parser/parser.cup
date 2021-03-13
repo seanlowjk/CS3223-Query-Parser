@@ -57,6 +57,11 @@ mainquery ::= finalquery:s INTERSECT finalquery:t
 			parser.query = r;
 			RESULT = r;
 		:} 
+		| finalquery:s 
+		{:
+			parser.query = s;
+			RESULT = s;
+		:}
 		;
 
 finalquery ::= sqlquery:s

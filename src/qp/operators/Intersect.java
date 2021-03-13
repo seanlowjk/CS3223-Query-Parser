@@ -4,6 +4,7 @@
 
 package qp.operators;
 
+import qp.optimizer.BufferManager;
 import qp.utils.Attribute;
 import qp.utils.Batch;
 import qp.utils.Tuple;
@@ -30,10 +31,10 @@ public class Intersect extends SetOperator {
     boolean eosr;                   // Whether end of stream (right table) is reached
     int countLeft = 0;
 
-    public Intersect(SetOperator base) {
-        super(base.getLeft(), base.getRight(), base.getOpType());
-        schema = base.getSchema();
-        numBuff = base.getNumBuff();
+    public Intersect(Operator left, Operator right, int opType) {
+        super(left, right, opType);
+        schema = left.getSchema();
+        numBuff = BufferManager.getNumberOfBuffers();
     }
 
     /**
