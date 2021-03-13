@@ -40,8 +40,6 @@ public class QueryMain {
                 leftquery.isGroupBy(), leftquery.isSetOperation(), args, in);
             
             Operator leftroot = getQueryPlan(leftquery);
-            printFinalPlan(leftroot);
-            proceedQuery(args, in);
             double leftexecutiontime = executeQuery(leftroot);
 
             SQLQuery rightquery = sqlquery.getRightQuery();
@@ -49,19 +47,26 @@ public class QueryMain {
                 rightquery.isGroupBy(), rightquery.isSetOperation(), args, in);
             
             Operator rightroot = getQueryPlan(rightquery);
-            printFinalPlan(rightroot);
-            proceedQuery(args, in);
             double rightexecutiontime = executeQuery(rightroot);
-        } 
 
-        configureBufferManager(sqlquery.getNumJoin(), sqlquery.getNumOrder(),
+            configureBufferManager(sqlquery.getNumJoin(), sqlquery.getNumOrder(),   
                 sqlquery.isDistinct(), sqlquery.isGroupBy(), sqlquery.isSetOperation(), args, in);
 
-        Operator root = getQueryPlan(sqlquery);
-        printFinalPlan(root);
-        proceedQuery(args, in);
-        double executiontime = executeQuery(root);
-        printResults(root, executiontime, args[1]);
+            Operator root = getQueryPlan(sqlquery);
+            printFinalPlan(root);
+            proceedQuery(args, in);
+            double executiontime = executeQuery(root);
+            printResults(root, executiontime, args[1]);
+        } else {
+            configureBufferManager(sqlquery.getNumJoin(), sqlquery.getNumOrder(),   
+                sqlquery.isDistinct(), sqlquery.isGroupBy(), sqlquery.isSetOperation(), args, in);
+
+            Operator root = getQueryPlan(sqlquery);
+            printFinalPlan(root);
+            proceedQuery(args, in);
+            double executiontime = executeQuery(root);
+            printResults(root, executiontime, args[1]);
+        }
     }
 
     /**
