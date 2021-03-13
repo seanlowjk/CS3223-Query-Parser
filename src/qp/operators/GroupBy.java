@@ -47,6 +47,7 @@ public class GroupBy extends Operator {
         this.numberOfBuffers = BufferManager.getNumberOfBuffers();
         this.comparator = new TupleComparator(base.getSchema(),
             AttributeDirection.getAttributeDirections(attrList, false));
+        schema = base.getSchema();
     }
 
     public Operator getBase() {
@@ -59,6 +60,10 @@ public class GroupBy extends Operator {
 
     public ArrayList<Attribute> getProjAttr() {
         return this.attrList;
+    }
+
+    public int compare(Tuple left, Tuple right) {
+        return comparator.compare(left, right);
     }
 
     /**
