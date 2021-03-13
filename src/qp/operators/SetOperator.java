@@ -18,6 +18,7 @@ public class SetOperator extends Operator {
         super(type);
         this.left = left;
         this.right = right;
+        schema = this.left.getSchema(); 
     }
 
     public int getNumBuff() {
