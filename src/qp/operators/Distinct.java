@@ -125,56 +125,58 @@ public class Distinct extends Operator {
      * individually sorted runs.
      */
     private ArrayList<File> createSortedRunsWithAttributes(int batchSize) {
-        Batch inputBatch = base.next();
-        Batch outputBatch = new Batch(batchSize);
-        ArrayList<Batch> outputBatches = new ArrayList<>();
-        ArrayList<Tuple> bufferTuples = new ArrayList<>();
         ArrayList<File> outputFiles = new ArrayList<>();
-        int numberOfBuffersUsed = 0;
-        int roundNum = 0;
-
-        while (inputBatch != null) {
-            // Project only attributes that we are interested in
-            for (int i = 0; i < inputBatch.size(); i++) {
-                Tuple inputTuple = inputBatch.get(i);
-                ArrayList<Object> projected = new ArrayList<>();
-
-                for (int j = 0; j < attrList.size(); j++) {
-                    Object data = inputTuple.dataAt(attrIndices[j]);
-                    projected.add(data);
+        int fileNumber = 0;
+        Batch nextRun = base.next();
+        while (nextRun != null) {
+            List<Batch> initialRuns = new ArrayList<>();
+            int numberOfBuffersUsed = 0;
+            while (numberOfBuffersUsed < numberOfBuffers && nextRun != null) {
+                initialRuns.add(nextRun);
+                nextRun = base.next();
+                if (nextRun == null) {
+                    break;
                 }
-
-                Tuple outputTuple = new Tuple(projected);
-                bufferTuples.add(outputTuple);
+                numberOfBuffersUsed++;
             }
 
-            numberOfBuffersUsed++;
-            inputBatch = base.next();
-
-            // Current buffer is full, sort and output to disk first
-            if (numberOfBuffersUsed == numberOfBuffers || inputBatch == null) {
-                // Generate a sorted run from the projected tuples
-                Collections.sort(bufferTuples, this.comparator);
-
-                // Returns the sorted run as a list of batches
-                for (int i = 0; i < bufferTuples.size(); i++) {
-                    outputBatch.add(bufferTuples.get(i));
-
-                    if (((i+1) % batchSize == 0) || ((i+1) != bufferTuples.size())) {
-                        outputBatches.add(outputBatch);
-                        outputBatch = new Batch(batchSize);
+            ArrayList<Tuple> tuples = new ArrayList<>();
+            ArrayList<Batch> sortedRuns = new ArrayList<>();
+            for (Batch batch : initialRuns) {
+                for (int i = 0; i < batch.size(); i++) {
+                    Tuple inputTuple = batch.get(i);
+                    ArrayList<Object> projectedData = new ArrayList<>();
+                    for (int j = 0; j < attrIndices.length; j++) {
+                        Object data = inputTuple.dataAt(attrIndices[j]);
+                        projectedData.add(data);
                     }
+                    tuples.add(new Tuple(projectedData));
                 }
+            }
 
-                // Write all batches of current buffer to file
-                String sortedFilename = String.format("distinct-%d", roundNum);
-                File sortedRunFile = BatchUtils.writeRuns(outputBatches, sortedFilename);
-                outputFiles.add(sortedRunFile);
+            Collections.sort(tuples, this.comparator);
 
-                roundNum++;
-                numberOfBuffersUsed = 0;
-                bufferTuples = new ArrayList<>();
-                outputBatches = new ArrayList<>();
+            Batch sortedRun = new Batch(batchSize);
+            for (int i = 0; i < tuples.size(); i++) {
+                Tuple tuple = tuples.get(i);
+                sortedRun.add(tuple);
+
+                if (sortedRun.isFull()) {
+                    sortedRuns.add(sortedRun);
+                    sortedRun = new Batch(batchSize);
+                }
+            }
+
+            if (!sortedRun.isEmpty()) {
+                sortedRuns.add(sortedRun);
+            }
+
+            if (sortedRuns.size() > 0) {
+                // Generates a file written with the generated sorted files.
+                String filename = String.format("distinct-X-%d", fileNumber);
+                File sortedRunsFile = BatchUtils.writeRuns(sortedRuns, filename);
+                fileNumber ++;
+                outputFiles.add(sortedRunsFile);
             }
         }
 
