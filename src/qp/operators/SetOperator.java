@@ -12,6 +12,7 @@ public class SetOperator extends Operator {
 
     Operator left;                       // Left child
     Operator right;                      // Right child
+    int setOpType;                       // Type of Set Operator
     int numBuff;                         // Number of buffers available
 
     public SetOperator(Operator left, Operator right, int type) {
@@ -39,6 +40,14 @@ public class SetOperator extends Operator {
 
     public Operator getRight() {
         return right;
+    }
+
+    public void setSetOpType(int type) {
+        setOpType = type;
+    }
+
+    public int getSetOptTpe() {
+        return setOpType;
     }
 
     public void setRight(Operator right) {
