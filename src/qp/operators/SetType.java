@@ -6,7 +6,7 @@
 
 package qp.operators;
 
-public class JoinType {
+public class SetType {
 
     public static final int INTERSECT = 0;
 
