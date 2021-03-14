@@ -141,35 +141,16 @@ public class QueryMain {
             System.exit(1);
         }
     }
-    
-    /**
-     * Run optimiser and get the final query plan as an Operator
-     * This is an overloaded function for Set Operations 
-     **/
-    public static Operator getQueryPlan(SQLQuery sqlquery, Operator left, Operator right) {
-        Operator root = null;
-
-        RandomOptimizer optimizer = new RandomOptimizer(sqlquery);
-        Operator planroot = optimizer.getOptimizedPlan(left, right);
-
-        if (planroot == null) {
-            System.out.println("DPOptimizer: query plan is null");
-            System.exit(1);
-        }
-
-        root = RandomOptimizer.makeExecPlan(planroot);
-
-        return root;
-    }
 
     /**
      * Run optimiser and get the final query plan as an Operator
      **/
-    public static Operator getQueryPlan(SQLQuery sqlquery) {
+    public static Operator getQueryPlan(SQLQuery sqlquery, Operator... operators) {
+        System.out.println(operators);
         Operator root = null;
 
         RandomOptimizer optimizer = new RandomOptimizer(sqlquery);
-        Operator planroot = optimizer.getOptimizedPlan();
+        Operator planroot = optimizer.getOptimizedPlan(operators);
 
         if (planroot == null) {
             System.out.println("DPOptimizer: query plan is null");
@@ -189,7 +170,6 @@ public class QueryMain {
         Debug.PPrint(root);
         PlanCost pc = new PlanCost();
         System.out.printf("\nExpected cost: %d\n", pc.getCost(root));
-
         if (args.length < 5) {
             /** Ask user whether to continue execution of the program **/
             System.out.println("enter 1 to continue, 0 to abort ");
@@ -208,13 +188,12 @@ public class QueryMain {
     /**
      * Execute query and print run statistics
      **/
-    private static void executeQuery(Operator root, String resultfile) {
+    public static double executeQuery(Operator root, String resultfile) {
         long starttime = System.currentTimeMillis();
         if (root.open() == false) {
             System.out.println("Root: Error in opening of root");
             System.exit(1);
         }
-
         try {
             out = new PrintWriter(new BufferedWriter(new FileWriter(resultfile)));
         } catch (IOException io) {
@@ -238,8 +217,9 @@ public class QueryMain {
         out.close();
 
         long endtime = System.currentTimeMillis();
-        double totalexecutiontime = ((endtime - starttime) / 1000.0);
-        System.out.printf("Execution time = %.4f\n", totalexecutiontime);
+        double executiontime = (endtime - starttime) / 1000.0;
+        System.out.printf("Execution time = %.4f\n", executiontime);
+        return executiontime;
     }
 
     protected static void printSchema(Schema schema) {
