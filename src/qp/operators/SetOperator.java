@@ -4,6 +4,7 @@
 
 package qp.operators;
 
+import qp.utils.Attribute;
 import qp.utils.Schema;
 
 import java.util.ArrayList;
@@ -19,7 +20,28 @@ public class SetOperator extends Operator {
         super(type);
         this.left = left;
         this.right = right;
+        if (!isUnionCompatible(this.left, this.right)) {
+            System.out.println("Check your relations for union compatibility");
+            System.exit(1);
+        }
         schema = this.left.getSchema(); 
+    }
+
+    public static boolean isUnionCompatible(Operator left, Operator right) {
+        ArrayList<Attribute> leftAttributes = left.getSchema().getAttList();
+        ArrayList<Attribute> rightAttributes = right.getSchema().getAttList();
+
+        if (leftAttributes.size() != rightAttributes.size()) {
+            return false;
+        }
+
+        for (int i = 0; i < leftAttributes.size(); i++) {
+            if (leftAttributes.get(i).getProjectedType() != rightAttributes.get(i).getProjectedType()) {
+                return false;
+            }
+        }
+
+        return true; 
     }
 
     public int getNumBuff() {

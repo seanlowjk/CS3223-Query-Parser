@@ -30,11 +30,6 @@ public class QueryMain {
         SQLQuery sqlquery = getSQLQuery(args[0]);
 
         if (sqlquery.isSetOperation()) {
-            if (!sqlquery.isUnionCompatible()) {
-                System.out.println("Check your relations for union compatibility");
-                System.exit(1);
-            }
-
             SQLQuery leftquery = sqlquery.getLeftQuery();
             configureBufferManager(leftquery.getNumJoin(), leftquery.getNumOrder(), leftquery.isDistinct(), 
                 leftquery.isGroupBy(), leftquery.isSetOperation(), args, in);

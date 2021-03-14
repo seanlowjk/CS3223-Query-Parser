@@ -85,24 +85,6 @@ public class SQLQuery {
         }
     }
 
-    /** Precondition: leftQuery and rightQuery MUST exist */
-    public boolean isUnionCompatible() {
-        ArrayList<Attribute> leftAttributes = leftQuery.getProjectList();
-        ArrayList<Attribute> rightAttributes = rightQuery.getProjectList();
-
-        if (leftAttributes.size() != rightAttributes.size()) {
-            return false;
-        }
-
-        for (int i = 0; i < leftAttributes.size(); i++) {
-            if (leftAttributes.get(i).getProjectedType() != rightAttributes.get(i).getProjectedType()) {
-                return false;
-            }
-        }
-
-        return true; 
-    }
-
     public int getSetOperationType() {
         return this.setOpType; 
     }
