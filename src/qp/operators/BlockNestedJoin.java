@@ -231,6 +231,6 @@ public class BlockNestedJoin extends Join {
     public boolean close() {
         File f = new File(rfname);
         f.delete();
-        return true;
+        return left.close() && right.close();
     }
 }

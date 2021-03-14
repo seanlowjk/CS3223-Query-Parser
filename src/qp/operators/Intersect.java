@@ -222,6 +222,6 @@ public class Intersect extends SetOperator {
     public boolean close() {
         File f = new File(rfname);
         f.delete();
-        return true;
+        return left.close() && right.close();
     }
 }
