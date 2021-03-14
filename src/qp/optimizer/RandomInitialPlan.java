@@ -49,8 +49,14 @@ public class RandomInitialPlan {
 
     /**
      * prepare initial plan for the query
+     * @param operators additional operators provided if it's a set operation 
      **/
-    public Operator prepareInitialPlan() {
+    public Operator prepareInitialPlan(Operator... operators) {
+
+        if (operators.length > 0) {
+            createSetOp(operators);
+            return root; 
+        }
 
         tab_op_hash = new HashMap<>();
         createScanOp();
@@ -193,6 +199,14 @@ public class RandomInitialPlan {
         Operator base = root;
         root = new Sort(base, orderByList, BufferManager.getNumberOfBuffers(), isDescending, OpType.SORT);
         Schema newSchema = base.getSchema();
+        root.setSchema(newSchema);
+    }
+
+    public void createSetOp(Operator... operators) {
+        Operator left = operators[0];
+        Operator right = operators[1];
+        root = new Intersect(left, right, OpType.INTERSECT);
+        Schema newSchema = left.getSchema();
         root.setSchema(newSchema);
     }
 
