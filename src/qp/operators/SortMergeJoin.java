@@ -107,8 +107,6 @@ public class SortMergeJoin extends Join {
 
     @Override
     public Batch next() {
-
-        System.out.println("SM Next");
         outbatch = new Batch(batchsize);
 
         if (eosl) {
