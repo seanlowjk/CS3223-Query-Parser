@@ -154,9 +154,10 @@ public class RandomInitialPlan {
      * create cross product operators 
      */
     public void createProductOp() {
+        int jnnum = numJoin; 
         String leftTable = null;
         Operator leftOp = null;
-        Operator cp = null;
+        Join cp = null;
         for (HashMap.Entry<String, Operator> entry : tab_op_hash.entrySet()) {
             String tableName = entry.getKey();
             Operator op = entry.getValue();
@@ -168,7 +169,8 @@ public class RandomInitialPlan {
 
             if (!leftOp.getSchema().checkCompat(op.getSchema())) {
                 System.out.printf("Product needed! %s and %s\n\n", leftTable, tableName);
-                cp = new CrossProduct(leftOp, op, OpType.CROSS);
+                cp = new Join(leftOp, op, OpType.JOIN);
+                cp.setNodeIndex(jnnum);
                 Schema newsche = leftOp.getSchema().joinWith(op.getSchema());
                 cp.setSchema(newsche);
 
@@ -182,10 +184,10 @@ public class RandomInitialPlan {
 
                 leftTable = tableName;
                 leftOp = cp;
+                
+                jnnum ++;
             }
         }
-
-        System.exit(1);
 
         if (cp != null) {
             root = cp;

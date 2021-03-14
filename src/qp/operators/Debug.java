@@ -103,9 +103,13 @@ public class Debug {
                     break;
             }
             PPrint(((Join) node).getLeft());
-            System.out.print("  [");
-            PPrint(((Join) node).getCondition());
-            System.out.print("]  ");
+            if (((Join) node).getCondition() != null) {
+                System.out.print("  [");
+                PPrint(((Join) node).getCondition());
+                System.out.print("]  ");
+            } else {
+                System.out.print(" X ");
+            }
             PPrint(((Join) node).getRight());
             System.out.print(")");
 
