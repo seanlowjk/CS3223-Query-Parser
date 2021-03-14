@@ -7,13 +7,12 @@ package qp.operators;
 import qp.optimizer.BufferManager;
 import qp.utils.Attribute;
 import qp.utils.Batch;
-import qp.utils.BatchUtils;
 import qp.utils.Schema;
 import qp.utils.Tuple;
 
-import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Queue;
 
 public class Project extends Operator {
 
@@ -26,13 +25,13 @@ public class Project extends Operator {
      * The following fields are requied during execution
      * * of the Project Operator
      **/
-    Batch inbatch;
+    Batch inbatch; //pts to the first batch in block
     Batch outbatch;
 
     /**
      * Buffering
      */
-    ArrayList<Batch> buffer;
+    Queue<Batch> buffer;
 
     /**
      * index of the attributes in the base operator
@@ -40,23 +39,14 @@ public class Project extends Operator {
      **/
     int[] attrIndex;
 
-    /**
-     * index of attr with aggregation in attrset
-     */
-    ArrayList<Integer> aggGrpByAttrPtr; //agg functions related to grpby
-    ArrayList<Integer> aggAttrPtr;
-    ArrayList<Integer> attrPtr;
     int indexInBatch;
-
-    HashMap<Integer, ArrayList<File>> grpFiles;
-    int grpCount;
+    boolean end;
 
     public Project(Operator base, ArrayList<Attribute> as, int type) {
         super(type);
         this.base = base;
         this.attrset = as;
         this.numOfBuffers = BufferManager.getNumberOfBuffers();
-        this.buffer = new ArrayList<Batch>();
     }
 
     public Operator getBase() {
@@ -78,27 +68,27 @@ public class Project extends Operator {
      * * projected from the base operator
      **/
     public boolean open() {
+        System.out.println("Proj");
         /** set number of tuples per batch **/
         int tuplesize = schema.getTupleSize();
         batchsize = Batch.getPageSize() / tuplesize;
 
+        System.out.println("base");
+        System.out.println(base.getOpType());
+        base.open();
         if (!base.open()) return false;
-
+        System.out.println("Proj Open");
         /** The following loop finds the index of the columns that
          ** are required from the base operator
          **/
         Schema baseSchema = base.getSchema();
         attrIndex = new int[attrset.size()];
-        aggAttrPtr= new ArrayList<Integer>();
-        aggGrpByAttrPtr= new ArrayList<Integer>();
         for (int i = 0; i < attrset.size(); ++i) {
             Attribute attr = attrset.get(i);
 
             if (attr.getAggType() != Attribute.NONE) {
-                aggAttrPtr.add(i);
-                //check for whether is a grpbyAgg
-            } else {
-                attrPtr.add(i);
+                System.err.println("Aggragation is not implemented.");
+                System.exit(1);
             }
 
             int index = baseSchema.indexOf(attr.getBaseAttribute());
@@ -107,8 +97,9 @@ public class Project extends Operator {
         /**
          * Index on inbatch
          */
+        buffer = new LinkedList<Batch>();
         indexInBatch = 0;
-        grpCount = 0;
+        end = false;
         return true;
     }
 
@@ -116,52 +107,62 @@ public class Project extends Operator {
      * Read next tuple from operator
      */
     public Batch next() {
+        System.out.println("Proj Next");
         outbatch = new Batch(batchsize);
 
-
-        if(aggAttrPtr.isEmpty() && aggGrpByAttrPtr.isEmpty()) {
-            /** all the tuples in the inbuffer goes to the output buffer **/
-            inbatch = base.next();
-            if(inbatch == null) {
-                return null;
-            }
-
-            for (int i = 0; i < inbatch.size(); i++) {
-                Tuple basetuple = inbatch.get(i);
-                //Debug.PPrint(basetuple);
-                //System.out.println();
-                ArrayList<Object> present = new ArrayList<>();
-                for (int j = 0; j < attrset.size(); j++) {
-                    Object data = basetuple.dataAt(attrIndex[j]);
-                    present.add(data);
-                }
-                Tuple outtuple = new Tuple(present);
-                outbatch.add(outtuple);
-            }
-        } else if (base instanceof GroupBy && !aggGrpByAttrPtr.isEmpty()) {
-            /**
-             * GroupBy with aggregate
-             */
-            ArrayList<Object> aggResult = new ArrayList<Object>();
-            HashMap<Integer, ArrayList<Object>> aggGrpBYResult = new HashMap<Integer, ArrayList<Object>>();
-            ArrayList<Integer> grpSize = new ArrayList<Integer>();
-
-            ArrayList<ArrayList<Object>> tupleData = new ArrayList<ArrayList<Object>>();
-
-
-        } else {
-
+        if(buffer.isEmpty()) {
+            genBlock();
         }
 
+        if(end) {
+            return null;
+        }
+
+        for (int i = 0; i < inbatch.size(); i++) {
+
+            Tuple basetuple = inbatch.get(i);
+            //Debug.PPrint(basetuple);
+            //System.out.println();
+            ArrayList<Object> present = new ArrayList<>();
+            for (int j = 0; j < attrset.size(); j++) {
+                Object data = basetuple.dataAt(attrIndex[j]);
+                present.add(data);
+            }
+            Tuple outtuple = new Tuple(present);
+            outbatch.add(outtuple);
+
+        }
+        buffer.poll();
+        inbatch = buffer.peek();
         return outbatch;
     }
 
+    public void genBlock() {
+        int numOfInputBuffers = numOfBuffers - 1;
 
-    public void getAggResults(ArrayList<Object> aggResult, HashMap<Integer, Object> aggGrpByResult) {
+        inbatch = base.next();
+
+        if(inbatch == null) {
+            end = true;
+            return;
+        }
+        buffer.add(inbatch);
+
+        Batch batch;
+        for(int i = 1; i < numOfInputBuffers; i++) {
+
+            batch = base.next();
+            if(batch == null) {
+                end = true;
+                break;
+            }
+
+            buffer.add(batch);
+        }
 
     }
 
-    public void genGrp() {
+/*    public void genGrp() {
 
         inbatch = base.next();
 
@@ -264,7 +265,7 @@ public class Project extends Operator {
             files.add(grpFile);
             grpFiles.put(grpCount, files);
         }
-    }
+    }*/
 
     /**
      * Close the operator
