@@ -55,6 +55,7 @@ public class RandomInitialPlan {
 
         if (operators.length > 0) {
             createSetOp(operators);
+            createDistinctOp();
             return root; 
         }
 
