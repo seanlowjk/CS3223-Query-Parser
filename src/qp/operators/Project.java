@@ -73,11 +73,7 @@ public class Project extends Operator {
         int tuplesize = schema.getTupleSize();
         batchsize = Batch.getPageSize() / tuplesize;
 
-        System.out.println("base");
-        System.out.println(base.getOpType());
-        base.open();
         if (!base.open()) return false;
-        System.out.println("Proj Open");
         /** The following loop finds the index of the columns that
          ** are required from the base operator
          **/
@@ -107,7 +103,6 @@ public class Project extends Operator {
      * Read next tuple from operator
      */
     public Batch next() {
-        System.out.println("Proj Next");
         outbatch = new Batch(batchsize);
 
         if(buffer.isEmpty()) {
