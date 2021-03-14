@@ -153,6 +153,12 @@ public class QueryMain {
         }
 
         root = RandomOptimizer.makeExecPlan(planroot);
+        if (RandomOptimizer.maxTupleSize > Batch.getPageSize()) {
+            System.out.println("Cannot proceed with final plan.");
+            System.out.printf("Error: Minimum %d bytes per page.\nYou only have given %d bytes per page.\n", 
+                RandomOptimizer.maxTupleSize, Batch.getPageSize());
+            System.exit(1);
+        }
 
         return root;
     }

@@ -6,6 +6,7 @@ package qp.optimizer;
 
 import qp.operators.*;
 import qp.utils.Attribute;
+import qp.utils.Batch;
 import qp.utils.Condition;
 import qp.utils.RandNumb;
 import qp.utils.SQLQuery;
@@ -27,6 +28,11 @@ public class RandomOptimizer {
      **/
     public static final int NUMCHOICES = 3;
 
+    /**
+     * To keep track of maximum tuple size in case is not given enough
+     */
+    public static int maxTupleSize = 0;  
+
     SQLQuery sqlquery;  // Vector of Vectors of Select + From + Where + GroupBy
     int numJoin;        // Number of joins in this query plan
 
@@ -44,6 +50,7 @@ public class RandomOptimizer {
      * * corresponding join operator implementation
      **/
     public static Operator makeExecPlan(Operator node) {
+        maxTupleSize = Math.max(node.getSchema().getTupleSize(), maxTupleSize);
         if (node.getOpType() == OpType.INTERSECT) {
             Operator left = (((SetOperator) node).getLeft());
             Operator right = (((SetOperator) node).getRight());
