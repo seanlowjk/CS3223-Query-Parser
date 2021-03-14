@@ -28,12 +28,38 @@ public class QueryMain {
         Batch.setPageSize(getPageSize(args, in));
 
         SQLQuery sqlquery = getSQLQuery(args[0]);
-        configureBufferManager(sqlquery.getNumJoin(), sqlquery.getNumOrder(),
-                sqlquery.isDistinct(), sqlquery.isGroupBy(), args, in);
 
-        Operator root = getQueryPlan(sqlquery);
-        printFinalPlan(root, args, in);
-        executeQuery(root, args[1]);
+        if (sqlquery.isSetOperation()) {
+            SQLQuery leftquery = sqlquery.getLeftQuery();
+            configureBufferManager(leftquery.getNumJoin(), leftquery.getNumOrder(), leftquery.isDistinct(), 
+                leftquery.isGroupBy(), leftquery.isSetOperation(), args, in);
+        
+            System.out.println("=================  left set operand ===================================");
+            Operator leftroot = getQueryPlan(leftquery);
+            System.out.println("==========  end of left set operand ===================================n");
+
+            SQLQuery rightquery = sqlquery.getRightQuery();
+            configureBufferManager(rightquery.getNumJoin(), rightquery.getNumOrder(), rightquery.isDistinct(), 
+                rightquery.isGroupBy(), rightquery.isSetOperation(), args, in);
+            
+            System.out.println("================= right set operand ===================================");
+            Operator rightroot = getQueryPlan(rightquery);
+            System.out.println("========== end of right set operand ===================================n");
+
+            configureBufferManager(sqlquery.getNumJoin(), sqlquery.getNumOrder(),   
+                sqlquery.isDistinct(), sqlquery.isGroupBy(), sqlquery.isSetOperation(), args, in);
+
+            Operator root = getQueryPlan(sqlquery, leftroot, rightroot);
+            printFinalPlan(root, args, in);
+            executeQuery(root, args[1]);
+        } else {
+            configureBufferManager(sqlquery.getNumJoin(), sqlquery.getNumOrder(),   
+                sqlquery.isDistinct(), sqlquery.isGroupBy(), sqlquery.isSetOperation(), args, in);
+
+            Operator root = getQueryPlan(sqlquery);
+            printFinalPlan(root, args, in);
+            executeQuery(root, args[1]);
+        }
     }
 
     /**
@@ -88,9 +114,9 @@ public class QueryMain {
      * As buffer manager is not implemented, just input the number of buffers available.
      **/
     private static void configureBufferManager(int numJoin, int numOrder,
-            boolean isDistinct, boolean isGroupBy, String[] args,
+            boolean isDistinct, boolean isGroupBy, boolean isSetOp, String[] args,
             BufferedReader in) {
-        if (numJoin != 0 || numOrder != 0 || isDistinct || isGroupBy) {
+        if (numJoin != 0 || numOrder != 0 || isDistinct || isGroupBy || isSetOp) {
             int numBuff = 1000;
             if (args.length < 4) {
                 System.out.println("enter the number of buffers available");
@@ -103,7 +129,7 @@ public class QueryMain {
             } else numBuff = Integer.parseInt(args[3]);
             BufferManager bm = new BufferManager(numBuff, numJoin);
         }
-
+        
         /** Check the number of buffers available is enough or not **/
         int numBuff = BufferManager.getBuffersPerJoin();
         if (numJoin > 0 && numBuff < 3) {
@@ -115,11 +141,11 @@ public class QueryMain {
     /**
      * Run optimiser and get the final query plan as an Operator
      **/
-    public static Operator getQueryPlan(SQLQuery sqlquery) {
+    public static Operator getQueryPlan(SQLQuery sqlquery, Operator... operators) {
         Operator root = null;
 
         RandomOptimizer optimizer = new RandomOptimizer(sqlquery);
-        Operator planroot = optimizer.getOptimizedPlan();
+        Operator planroot = optimizer.getOptimizedPlan(operators);
 
         if (planroot == null) {
             System.out.println("DPOptimizer: query plan is null");
@@ -187,7 +213,7 @@ public class QueryMain {
 
         long endtime = System.currentTimeMillis();
         double executiontime = (endtime - starttime) / 1000.0;
-        System.out.println("Execution time = " + executiontime);
+        System.out.printf("Execution time = %.4f\n", executiontime);
         return executiontime;
     }
 

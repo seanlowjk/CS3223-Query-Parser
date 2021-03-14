@@ -48,7 +48,16 @@ STRING_LITERAL=\"{CHAR}*\"
   yybegin(YYINITIAL);
   return new Symbol(sym.WHERE,yyline,yychar,new TokenValue(yytext()));
 }
-   
+
+<YYINITIAL,NEGATE> INTERSECT {
+  yybegin(YYINITIAL);
+  return new Symbol(sym.INTERSECT,yyline,yychar,new TokenValue(yytext()));
+}
+
+<YYINITIAL,NEGATE> ALL {
+  yybegin(YYINITIAL);
+  return new Symbol(sym.ALL,yyline,yychar,new TokenValue(yytext()));
+}
 
 <YYINITIAL,NEGATE> GROUPBY {
   yybegin(YYINITIAL);

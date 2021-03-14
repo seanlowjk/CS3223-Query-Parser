@@ -216,6 +216,17 @@ public class SortMergeJoin extends Join {
             return false;
         }
         tuplestoclear = leftbatch.size(); 
+
+        // Confirm with the backtracker 
+        Tuple nexttuple = leftbatch.get(lcurs);
+        if (prevtuple != null && nexttuple.checkJoin(prevtuple, leftindex, leftindex)) {
+            try {
+                in.close();
+            } catch (IOException io) {
+                System.out.println("SortMergeJoin: Error in reading temporary file");
+            }
+            resetRightFile();
+        }
         return true; 
     }
 

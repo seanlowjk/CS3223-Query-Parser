@@ -1,28 +1,25 @@
+/**
+ * This is base class for the INTERSECT operator
+ **/
+
 package qp.operators;
 
+import qp.optimizer.BufferManager;
 import qp.utils.Attribute;
 import qp.utils.Batch;
-import qp.utils.Condition;
 import qp.utils.Tuple;
 
-import java.io.EOFException;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.sql.BatchUpdateException;
+import java.io.*;
+import java.util.ArrayList;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
 
-public class BlockNestedJoin extends Join {
+public class Intersect extends SetOperator {
 
     static int filenum = 0;         // To get unique filenum for this operation
     int batchsize;                  // Number of tuples per out batch
-    ArrayList<Integer> leftindex;   // Indices of the join attributes in left table
-    ArrayList<Integer> rightindex;  // Indices of the join attributes in right table
+    ArrayList<Integer> leftindex;   // Indices of the set attributes in left table
     String rfname;                  // The file name where the right table is materialized
     Batch outbatch;                 // Buffer page for output
     Queue<Tuple> leftBlock;         // Buffer block for left input stream
@@ -33,15 +30,14 @@ public class BlockNestedJoin extends Join {
     boolean eosl;                   // Whether end of stream (left table) is reached
     boolean eosr;                   // Whether end of stream (right table) is reached
 
-    public BlockNestedJoin(Join jn) {
-        super(jn.getLeft(), jn.getRight(), jn.getConditionList(), jn.getOpType());
-        schema = jn.getSchema();
-        jointype = jn.getJoinType();
-        numBuff = jn.getNumBuff();
+    public Intersect(Operator left, Operator right, int opType) {
+        super(left, right, opType);
+        schema = left.getSchema();
+        numBuff = BufferManager.getNumberOfBuffers();
     }
 
     /**
-     * During open finds the index of the join attributes
+     * During open finds the index of the set attributes
      * * Materializes the right hand side into a file
      * * Opens the connections
      **/
@@ -51,14 +47,10 @@ public class BlockNestedJoin extends Join {
         int tuplesize = schema.getTupleSize();
         batchsize = Batch.getPageSize() / tuplesize;
 
-        /** find indices attributes of join conditions **/
+        /** find indices attributes of equality conditions **/
         leftindex = new ArrayList<>();
-        rightindex = new ArrayList<>();
-        for (Condition con : conditionList) {
-            Attribute leftattr = con.getLhs();
-            Attribute rightattr = (Attribute) con.getRhs();
-            leftindex.add(left.getSchema().indexOf(leftattr));
-            rightindex.add(right.getSchema().indexOf(rightattr));
+        for (int i = 0; i < left.getSchema().getAttList().size(); i++) {
+            leftindex.add(i);
         }
         Batch rightpage;
 
@@ -74,7 +66,7 @@ public class BlockNestedJoin extends Join {
         leftBlock = new LinkedList<>();
 
         /** Right hand side table is to be materialized
-         ** for the  Block Nested join to perform
+         ** for the Intersection to perform
          **/
         if (!right.open()) {
             return false;
@@ -84,7 +76,7 @@ public class BlockNestedJoin extends Join {
              ** into a file
              **/
             filenum++;
-            rfname = "BNJtemp-" + String.valueOf(filenum);
+            rfname = "Itemp-" + String.valueOf(filenum);
             try {
                 ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(rfname));
                 while ((rightpage = right.next()) != null) {
@@ -92,7 +84,7 @@ public class BlockNestedJoin extends Join {
                 }
                 out.close();
             } catch (IOException io) {
-                System.out.println("BlockNestedJoin: Error writing to temporary file");
+                System.out.println("Intersect: Error writing to temporary file");
                 return false;
             }
             if (!right.close())
@@ -134,23 +126,23 @@ public class BlockNestedJoin extends Join {
                         in = new ObjectInputStream(new FileInputStream(rfname));
                         eosr = false;
                     } catch (IOException io) {
-                        System.err.println("NestedJoin:error in reading the file");
+                        System.err.println("Intersect:error in reading the file");
                         System.exit(1);
                     }
                 }
             } catch (IOException io) {
-                System.err.println("BlockNestedJoin:error in reading the file");
+                System.err.println("Intersect:error in reading the file");
                 System.exit(1);
             } catch (Exception e) {
                 System.out.println(e.getMessage());
                 System.exit(1);
             }
-            getJoinBatch();
+            getSetBatch();
         }
         return outbatch;
     }
 
-    public void getJoinBatch() {
+    public void getSetBatch() {
         try {
             while (!eosr) {
                 if (rcurs == 0) {
@@ -160,9 +152,8 @@ public class BlockNestedJoin extends Join {
                     Tuple leftTuple = leftBlock.peek();
                     for (int i = rcurs; i < rightbatch.size(); i++) {
                         Tuple rightTuple = rightbatch.get(i);
-                        if (leftTuple.checkJoin(rightTuple, leftindex, rightindex)) {
-                            Tuple joinedTuple = leftTuple.joinWith(rightTuple);
-                            outbatch.add(joinedTuple);
+                        if (leftTuple.checkJoin(rightTuple, leftindex, leftindex)) {
+                            outbatch.add(leftTuple);
                             if (outbatch.isFull()) {
                                 rcurs = i; 
                                 if (!leftBlock.isEmpty() && rcurs != rightbatch.size() - 1) {
@@ -188,15 +179,15 @@ public class BlockNestedJoin extends Join {
             try {
                 in.close();
             } catch (IOException io) {
-                System.out.println("NestedJoin: Error in reading temporary file");
+                System.out.println("Intersect: Error in reading temporary file");
             }
             leftBlock.poll(); 
             eosr = true;
         } catch (ClassNotFoundException c) {
-            System.out.println("NestedJoin: Error in deserialising temporary file ");
+            System.out.println("Intersect: Error in deserialising temporary file ");
             System.exit(1);
         } catch (IOException io) {
-            System.out.println("NestedJoin: Error in reading temporary file");
+            System.out.println("Intersect: Error in reading temporary file");
             System.exit(1);
         }
 

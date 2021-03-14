@@ -1,5 +1,6 @@
 package qp.parser;
 
+import qp.operators.OpType;
 import qp.utils.*;
 import java_cup.runtime.*;
 import java.util.*;
@@ -10,7 +11,7 @@ import java.util.*;
 parser code {: 
 	
 	public SQLQuery query;
-	
+
 	public SQLQuery getSQLQuery() {
 		return query;
 	}
@@ -36,10 +37,11 @@ action code {:
 terminal TokenValue ID;
 terminal COMMA,LEFTBRACKET,RIGHTBRACKET,DOT,STAR;
 terminal LESSTHAN,GREATERTHAN,LTOE,GTOE,EQUAL,NOTEQUAL;
-terminal SELECT,FROM,WHERE,GROUPBY,ORDERBY,MAX,MIN,SUM,COUNT,AVG,DISTINCT,DESC;
+terminal SELECT,FROM,WHERE,GROUPBY,ORDERBY,INTERSECT,ALL,MAX,MIN,SUM,COUNT,AVG,DISTINCT,DESC;
 terminal TokenValue STRINGLIT;
 
 /* Non terminals */
+nonterminal SQLQuery mainquery; 
 nonterminal SQLQuery finalquery;
 nonterminal SQLQuery sqlquery;
 nonterminal ArrayList attlist;
@@ -50,6 +52,28 @@ nonterminal Condition condition;
 nonterminal Condition op;
 
 /* The grammar */
+mainquery ::= finalquery:s INTERSECT finalquery:t
+		{:
+			SQLQuery r = new SQLQuery(s, t);
+			r.setSetOperationType(OpType.INTERSECT);
+			r.setIsDistinct(true);
+			parser.query = r;
+			RESULT = r;
+		:} 
+		| finalquery:s INTERSECT ALL finalquery:t
+		{:
+			SQLQuery r = new SQLQuery(s, t);
+			r.setSetOperationType(OpType.INTERSECT);
+			parser.query = r;
+			RESULT = r;
+		:} 
+		| finalquery:s 
+		{:
+			parser.query = s;
+			RESULT = s;
+		:}
+		;
+
 finalquery ::= sqlquery:s
 		{:
 			parser.query = s;
