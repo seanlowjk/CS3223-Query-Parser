@@ -4,20 +4,19 @@
  */
 package qp.operators;
 
-import java.io.File;
-import java.io.ObjectInputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 import qp.optimizer.BufferManager;
 import qp.utils.Attribute;
 import qp.utils.AttributeDirection;
 import qp.utils.Batch;
 import qp.utils.BatchUtils;
-import qp.utils.Schema;
 import qp.utils.Tuple;
 import qp.utils.TupleComparator;
+
+import java.io.File;
+import java.io.ObjectInputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class GroupBy extends Operator {
     // The base table to project

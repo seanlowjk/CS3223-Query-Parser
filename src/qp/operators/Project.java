@@ -68,7 +68,6 @@ public class Project extends Operator {
      * * projected from the base operator
      **/
     public boolean open() {
-        System.out.println("Proj");
         /** set number of tuples per batch **/
         int tuplesize = schema.getTupleSize();
         batchsize = Batch.getPageSize() / tuplesize;
