@@ -56,16 +56,14 @@ public class QueryMain {
 
             Operator root = getQueryPlan(sqlquery, leftroot, rightroot);
             printFinalPlan(root, args, in);
-            double executiontime = executeQuery(root);
-            printResults(root, executiontime, args[1]);
+            executeQuery(root, args[1]);
         } else {
             configureBufferManager(sqlquery.getNumJoin(), sqlquery.getNumOrder(),   
                 sqlquery.isDistinct(), sqlquery.isGroupBy(), sqlquery.isSetOperation(), args, in);
 
             Operator root = getQueryPlan(sqlquery);
             printFinalPlan(root, args, in);
-            double executiontime = executeQuery(root);
-            printResults(root, executiontime, args[1]);
+            executeQuery(root, args[1]);
         }
     }
 
@@ -136,7 +134,6 @@ public class QueryMain {
             } else numBuff = Integer.parseInt(args[3]);
             BufferManager bm = new BufferManager(numBuff, numJoin);
         }
-
         /** Check the number of buffers available is enough or not **/
         int numBuff = BufferManager.getBuffersPerJoin();
         if (numJoin > 0 && numBuff < 3) {
@@ -211,19 +208,13 @@ public class QueryMain {
     /**
      * Execute query and print run statistics
      **/
-    private static double executeQuery(Operator root) {
+    private static void executeQuery(Operator root, String resultfile) {
         long starttime = System.currentTimeMillis();
         if (root.open() == false) {
             System.out.println("Root: Error in opening of root");
             System.exit(1);
         }
-        long endtime = System.currentTimeMillis();
-        double executiontime = (endtime - starttime) / 1000.0;
-        return executiontime;
-    }
 
-    private static void printResults(Operator root, double executiontime, String resultfile) {
-        long starttime = System.currentTimeMillis();
         try {
             out = new PrintWriter(new BufferedWriter(new FileWriter(resultfile)));
         } catch (IOException io) {
@@ -247,7 +238,7 @@ public class QueryMain {
         out.close();
 
         long endtime = System.currentTimeMillis();
-        double totalexecutiontime = executiontime + ((endtime - starttime) / 1000.0);
+        double totalexecutiontime = ((endtime - starttime) / 1000.0);
         System.out.printf("Execution time = %.4f\n", totalexecutiontime);
     }
 
