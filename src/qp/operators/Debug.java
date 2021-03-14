@@ -124,7 +124,8 @@ public class Debug {
             System.out.print("Project(");
             PPrint(((Project) node).getBase());
             System.out.print(")");
-
+        } else if (optype == OpType.SORT) {
+            PPrint(((Sort) node).getBase());
         } else if (optype == OpType.SCAN) {
             System.out.print(((Scan) node).getTabName());
         }
