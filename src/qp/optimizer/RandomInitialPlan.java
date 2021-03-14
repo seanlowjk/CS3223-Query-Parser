@@ -55,8 +55,6 @@ public class RandomInitialPlan {
      * @param operators additional operators provided if it's a set operation 
      **/
     public Operator prepareInitialPlan(Operator... operators) {
-        System.out.printf("Stats: %d vs %d\n", joinlist.size(), fromlist.size());
-
         if (operators.length > 0) {
             createSetOp(operators);
             createDistinctOp();
@@ -71,7 +69,6 @@ public class RandomInitialPlan {
         }
 
         if (fromlist.size() > joinlist.size() + 1) {
-            System.out.println("Cross Product is Needed");
             createProductOp();
         }
 
@@ -159,6 +156,7 @@ public class RandomInitialPlan {
     public void createProductOp() {
         String leftTable = null;
         Operator leftOp = null;
+        Operator cp = null;
         for (HashMap.Entry<String, Operator> entry : tab_op_hash.entrySet()) {
             String tableName = entry.getKey();
             Operator op = entry.getValue();
@@ -169,9 +167,28 @@ public class RandomInitialPlan {
             }
 
             if (!leftOp.getSchema().checkCompat(op.getSchema())) {
-                System.out.printf("Product needed! %s and %s\n", leftTable, tableName);
-                System.exit(1);
+                System.out.printf("Product needed! %s and %s\n\n", leftTable, tableName);
+                cp = new CrossProduct(leftOp, op, OpType.CROSS);
+                Schema newsche = leftOp.getSchema().joinWith(op.getSchema());
+                cp.setSchema(newsche);
+
+                modifyHashtable(leftOp, cp);
+                modifyHashtable(op, cp);
+
+                for (HashMap.Entry<String, Operator> oldentry : tab_op_hash.entrySet()) {
+                    String oldtablename = oldentry.getKey();
+                    Operator oldOP = oldentry.getValue();
+                }
+
+                leftTable = tableName;
+                leftOp = cp;
             }
+        }
+
+        System.exit(1);
+
+        if (cp != null) {
+            root = cp;
         }
     }
 
