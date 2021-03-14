@@ -55,10 +55,7 @@ public class QueryMain {
                 sqlquery.isDistinct(), sqlquery.isGroupBy(), sqlquery.isSetOperation(), args, in);
 
             Operator root = getQueryPlan(sqlquery, leftroot, rightroot);
-            printFinalPlan(root);
-
-
-            proceedQuery(args, in);
+            printFinalPlan(root, args, in);
             double executiontime = executeQuery(root);
             printResults(root, executiontime, args[1]);
         } else {
@@ -66,8 +63,7 @@ public class QueryMain {
                 sqlquery.isDistinct(), sqlquery.isGroupBy(), sqlquery.isSetOperation(), args, in);
 
             Operator root = getQueryPlan(sqlquery);
-            printFinalPlan(root);
-            proceedQuery(args, in);
+            printFinalPlan(root, args, in);
             double executiontime = executeQuery(root);
             printResults(root, executiontime, args[1]);
         }
@@ -191,14 +187,12 @@ public class QueryMain {
     /**
      * Print final Plan and ask user whether to continue
      **/
-    private static void printFinalPlan(Operator root) {
+    private static void printFinalPlan(Operator root, String[] args, BufferedReader in) {
         System.out.println("----------------------Execution Plan----------------");
         Debug.PPrint(root);
         PlanCost pc = new PlanCost();
         System.out.printf("\nExpected cost: %d\n", pc.getCost(root));
-    }
 
-    private static void proceedQuery(String[] args, BufferedReader in) {
         if (args.length < 5) {
             /** Ask user whether to continue execution of the program **/
             System.out.println("enter 1 to continue, 0 to abort ");
