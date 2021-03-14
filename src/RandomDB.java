@@ -3,6 +3,7 @@ import qp.utils.Schema;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class RandomDB {
 
@@ -44,6 +45,7 @@ public class RandomDB {
             int numCol = Integer.parseInt(line);
             String[] datatype = new String[numCol];
             int[] range = new int[numCol];
+            long timeRange = 0;
             String[] keytype = new String[numCol];
 
             /** second line is <size of tuple = number of bytes> **/
@@ -87,7 +89,12 @@ public class RandomDB {
                 }
 
                 /** range of the values allowed **/
-                range[i] = Integer.parseInt(tokenizer.nextToken());
+                String token =  tokenizer.nextToken();
+                try {
+                    range[i] = Integer.parseInt(token);
+                } catch (NumberFormatException e) {
+                    timeRange = Long.parseLong(token);
+                }
 
                 /** key type PK/FK/NK **/
                 keytype[i] = tokenizer.nextToken();
@@ -141,7 +148,7 @@ public class RandomDB {
                             }
                         }
                     } else if (datatype[j].equals("TIME")) {
-                        long numb = random.nextLong();
+                        long numb = ThreadLocalRandom.current().nextLong(timeRange);
                         time.add(numb);
                         outtbl.print(numb + "\t");
                     }
