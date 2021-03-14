@@ -19,14 +19,16 @@ public class RandomInitialPlan {
 
     ArrayList<Attribute> projectlist;
     ArrayList<String> fromlist;
-    ArrayList<Condition> selectionlist;   // List of select conditons
-    ArrayList<Condition> joinlist;        // List of join conditions
+    ArrayList<Condition> selectionlist;     // List of select conditons
+    ArrayList<Condition> joinlist;          // List of join conditions
     ArrayList<Attribute> groupbylist;
     ArrayList<Attribute> orderByList;
     boolean isDescending;
-    int numJoin;            // Number of joins in this query
+    int numJoin;                            // Number of joins in this query
     HashMap<String, Operator> tab_op_hash;  // Table name to the Operator
-    Operator root;          // Root of the query plan tree
+    Operator root;                          // Root of the query plan tree
+
+    int setOpType;                          // Type of Set Operation (INTERSECT)
 
     public RandomInitialPlan(SQLQuery sqlquery) {
         this.sqlquery = sqlquery;
@@ -38,6 +40,7 @@ public class RandomInitialPlan {
         orderByList = sqlquery.getOrderByList();
         isDescending = sqlquery.isDescending();
         numJoin = joinlist.size();
+        setOpType = sqlquery.getSetOperationType();
     }
 
     /**
@@ -206,7 +209,14 @@ public class RandomInitialPlan {
     public void createSetOp(Operator... operators) {
         Operator left = operators[0];
         Operator right = operators[1];
-        root = new Intersect(left, right, OpType.INTERSECT);
+        switch(setOpType) {
+            case OpType.INTERSECT:
+                root = new Intersect(left, right, OpType.INTERSECT);
+                break;
+            default: 
+                System.out.println("Invalid Set Operation. Please use a valid set operation");
+                System.exit(1);
+        }
         Schema newSchema = left.getSchema();
         root.setSchema(newSchema);
     }

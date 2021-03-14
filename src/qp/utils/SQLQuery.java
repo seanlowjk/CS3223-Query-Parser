@@ -10,6 +10,7 @@ public class SQLQuery {
 
     SQLQuery leftQuery;                  // Left Operand for Set Operation
     SQLQuery rightQuery;                 // Right Operand for Set Operation
+    int setOpType;                       // Type of Set Operation (INTERSECT)
 
     ArrayList<Attribute> projectList;    // List of project attributes from select clause
     ArrayList<String> fromList;          // List of tables in from clause
@@ -100,6 +101,14 @@ public class SQLQuery {
         }
 
         return true; 
+    }
+
+    public int getSetOperationType() {
+        return this.setOpType; 
+    }
+
+    public void setSetOperationType(int type) {
+        this.setOpType = type;
     }
 
     public boolean isSetOperation() {
