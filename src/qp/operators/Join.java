@@ -81,7 +81,10 @@ public class Join extends Operator {
     }
 
     public Condition getCondition() {
-        assert (conditionList.size() > 0);
+        if (conditionList.size() == 0) {
+            return null;
+        }
+        
         return conditionList.get(0);
     }
 

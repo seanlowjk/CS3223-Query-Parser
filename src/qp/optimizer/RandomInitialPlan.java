@@ -26,7 +26,7 @@ public class RandomInitialPlan {
     boolean isDescending;
     int numJoin;                            // Number of joins in this query
     HashMap<String, Operator> tab_op_hash;  // Table name to the Operator
-    Operator root;                          // Root of the query plan tree
+    Operator root;                          // Root of the query plan tree               
 
     int setOpType;                          // Type of Set Operation (INTERSECT)
 
@@ -55,7 +55,6 @@ public class RandomInitialPlan {
      * @param operators additional operators provided if it's a set operation 
      **/
     public Operator prepareInitialPlan(Operator... operators) {
-
         if (operators.length > 0) {
             createSetOp(operators);
             createDistinctOp();
@@ -68,6 +67,11 @@ public class RandomInitialPlan {
         if (numJoin != 0) {
             createJoinOp();
         }
+
+        if (fromlist.size() > joinlist.size() + 1) {
+            createProductOp();
+        }
+
         createGroupByOp();
 
         if (orderByList.size() > 0) {
@@ -144,6 +148,50 @@ public class RandomInitialPlan {
          **/
         if (selectionlist.size() != 0)
             root = op1;
+    }
+
+    /**
+     * create cross product operators 
+     */
+    public void createProductOp() {
+        int jnnum = numJoin; 
+        String leftTable = null;
+        Operator leftOp = null;
+        Join cp = null;
+        for (HashMap.Entry<String, Operator> entry : tab_op_hash.entrySet()) {
+            String tableName = entry.getKey();
+            Operator op = entry.getValue();
+            if (leftOp == null) {
+                leftTable = tableName;
+                leftOp = op;
+                continue; 
+            }
+
+            if (!leftOp.getSchema().checkCompat(op.getSchema())) {
+                System.out.printf("Product needed! %s and %s\n\n", leftTable, tableName);
+                cp = new Join(leftOp, op, OpType.JOIN);
+                cp.setNodeIndex(jnnum);
+                Schema newsche = leftOp.getSchema().joinWith(op.getSchema());
+                cp.setSchema(newsche);
+
+                modifyHashtable(leftOp, cp);
+                modifyHashtable(op, cp);
+
+                for (HashMap.Entry<String, Operator> oldentry : tab_op_hash.entrySet()) {
+                    String oldtablename = oldentry.getKey();
+                    Operator oldOP = oldentry.getValue();
+                }
+
+                leftTable = tableName;
+                leftOp = cp;
+                
+                jnnum ++;
+            }
+        }
+
+        if (cp != null) {
+            root = cp;
+        }
     }
 
     /**
