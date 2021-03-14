@@ -26,7 +26,7 @@ public class RandomInitialPlan {
     boolean isDescending;
     int numJoin;                            // Number of joins in this query
     HashMap<String, Operator> tab_op_hash;  // Table name to the Operator
-    Operator root;                          // Root of the query plan tree
+    Operator root;                          // Root of the query plan tree               
 
     int setOpType;                          // Type of Set Operation (INTERSECT)
 
@@ -55,6 +55,7 @@ public class RandomInitialPlan {
      * @param operators additional operators provided if it's a set operation 
      **/
     public Operator prepareInitialPlan(Operator... operators) {
+        System.out.printf("Stats: %d vs %d\n", joinlist.size(), fromlist.size());
 
         if (operators.length > 0) {
             createSetOp(operators);
@@ -68,6 +69,12 @@ public class RandomInitialPlan {
         if (numJoin != 0) {
             createJoinOp();
         }
+
+        if (fromlist.size() > joinlist.size() + 1) {
+            System.out.println("Cross Product is Needed");
+            createProductOp();
+        }
+
         createGroupByOp();
 
         if (orderByList.size() > 0) {
@@ -144,6 +151,28 @@ public class RandomInitialPlan {
          **/
         if (selectionlist.size() != 0)
             root = op1;
+    }
+
+    /**
+     * create cross product operators 
+     */
+    public void createProductOp() {
+        String leftTable = null;
+        Operator leftOp = null;
+        for (HashMap.Entry<String, Operator> entry : tab_op_hash.entrySet()) {
+            String tableName = entry.getKey();
+            Operator op = entry.getValue();
+            if (leftOp == null) {
+                leftTable = tableName;
+                leftOp = op;
+                continue; 
+            }
+
+            if (!leftOp.getSchema().checkCompat(op.getSchema())) {
+                System.out.printf("Product needed! %s and %s\n", leftTable, tableName);
+                System.exit(1);
+            }
+        }
     }
 
     /**
