@@ -4,6 +4,7 @@
 
 package qp.utils;
 
+import java.sql.Time;
 import java.util.*;
 import java.io.*;
 
@@ -87,6 +88,8 @@ public class Tuple implements Serializable {
             return ((String) leftdata).compareTo((String) rightdata);
         } else if (leftdata instanceof Float) {
             return ((Float) leftdata).compareTo((Float) rightdata);
+        } else if (leftdata instanceof Time)  {
+            return ((Time) leftdata).compareTo((Time) rightdata);
         } else {
             System.out.println("Tuple: Unknown comparision of the tuples");
             System.exit(1);
@@ -113,6 +116,8 @@ public class Tuple implements Serializable {
                 return ((String) leftdata).compareTo((String) rightdata);
             } else if (leftdata instanceof Float) {
                 return ((Float) leftdata).compareTo((Float) rightdata);
+            } else if (leftdata instanceof Time)  {
+                return ((Time) leftdata).compareTo((Time) rightdata);
             } else {
                 System.out.println("Tuple: Unknown comparision of the tuples");
                 System.exit(1);

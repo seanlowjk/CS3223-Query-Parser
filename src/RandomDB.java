@@ -77,6 +77,8 @@ public class RandomDB {
                     // System.out.println("String");
                 } else if (datatype[i].equals("REAL")) {
                     type = Attribute.REAL;
+                } else if (datatype[i].equals("TIME")) {
+                    type = Attribute.TIME;
                 } else {
                     type = -1;
                     System.err.println("invalid data type");
@@ -130,6 +132,15 @@ public class RandomDB {
                             }
                             pk[numb] = true;
                             outtbl.print(numb + "\t");
+                        } else if(datatype[j].equals("TIME")) {
+                            if (keytype[j].equals("PK")) {
+                                int numb = random.nextInt(range[0]);
+                                while (pk[numb] == true) {
+                                    numb = random.nextInt(range[0]);
+                                }
+                                pk[numb] = true;
+                                outtbl.print(numb + "\t");
+                            }
                         } else {
                             int value = random.nextInt(range[j]);
                             outtbl.print(value + "\t");

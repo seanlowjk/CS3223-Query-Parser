@@ -12,7 +12,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.sql.BatchUpdateException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -134,7 +133,7 @@ public class BlockNestedJoin extends Join {
                         in = new ObjectInputStream(new FileInputStream(rfname));
                         eosr = false;
                     } catch (IOException io) {
-                        System.err.println("NestedJoin:error in reading the file");
+                        System.err.println("BlockNestedJoin:error in reading the file");
                         System.exit(1);
                     }
                 }
