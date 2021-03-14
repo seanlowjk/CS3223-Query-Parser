@@ -185,7 +185,7 @@ public class NestedJoin extends Join {
     public boolean close() {
         File f = new File(rfname);
         f.delete();
-        return !left.close() || !right.close();
+        return left.close() && right.close();
     }
 
 }
