@@ -147,7 +147,6 @@ public class QueryMain {
      * Run optimiser and get the final query plan as an Operator
      **/
     public static Operator getQueryPlan(SQLQuery sqlquery, Operator... operators) {
-        System.out.println(operators);
         Operator root = null;
 
         RandomOptimizer optimizer = new RandomOptimizer(sqlquery);

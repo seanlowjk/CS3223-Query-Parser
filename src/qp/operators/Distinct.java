@@ -45,10 +45,18 @@ public class Distinct extends Operator {
     public Distinct(Operator base, ArrayList<Attribute> attrList) {
         super(OpType.DISTINCT);
         this.base = base;
-        this.attrList = attrList;
+        this.attrList = developAttrList(attrList, base);
         this.numberOfBuffers = BufferManager.getNumberOfBuffers();
         this.comparator = new TupleComparator(base.getSchema(),
-            AttributeDirection.getAttributeDirections(attrList, false));
+            AttributeDirection.getAttributeDirections(this.attrList, false));
+    }
+
+    private static final ArrayList<Attribute> developAttrList(ArrayList<Attribute> list, Operator base) {
+        if (list == null || list.size() == 0) {
+            return base.getSchema().getAttList();
+        } else {
+            return list; 
+        }
     }
 
     public Operator getBase() {
@@ -73,7 +81,9 @@ public class Distinct extends Operator {
             return false;
         }
 
-        int tupleSize = schema.getTupleSize();
+        int tupleSize = schema.getTupleSize() != 0
+            ? schema.getTupleSize() 
+            : base.getSchema().getTupleSize();
         batchSize = Batch.getPageSize() / tupleSize;
 
         Schema baseSchema = base.getSchema();
