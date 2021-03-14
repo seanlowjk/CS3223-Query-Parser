@@ -1,8 +1,20 @@
 import qp.utils.Attribute;
 import qp.utils.Schema;
 
-import java.io.*;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
+import java.sql.Time;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Random;
+import java.util.StringTokenizer;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class RandomDB {
@@ -149,8 +161,10 @@ public class RandomDB {
                         }
                     } else if (datatype[j].equals("TIME")) {
                         long numb = ThreadLocalRandom.current().nextLong(timeRange);
+                        Time t = new Time(numb);
                         time.add(numb);
-                        outtbl.print(numb + "\t");
+
+                        outtbl.print(t + "\t");
                     }
                 }
                 if (i != numtuple - 1)
