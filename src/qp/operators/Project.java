@@ -4,25 +4,34 @@
 
 package qp.operators;
 
+import qp.optimizer.BufferManager;
 import qp.utils.Attribute;
 import qp.utils.Batch;
 import qp.utils.Schema;
 import qp.utils.Tuple;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.Queue;
 
 public class Project extends Operator {
 
     Operator base;                 // Base table to project
     ArrayList<Attribute> attrset;  // Set of attributes to project
     int batchsize;                 // Number of tuples per outbatch
+    int numOfBuffers;
 
     /**
      * The following fields are requied during execution
      * * of the Project Operator
      **/
-    Batch inbatch;
+    Batch inbatch; //pts to the first batch in block
     Batch outbatch;
+
+    /**
+     * Buffering
+     */
+    Queue<Batch> buffer;
 
     /**
      * index of the attributes in the base operator
@@ -30,10 +39,14 @@ public class Project extends Operator {
      **/
     int[] attrIndex;
 
+    int indexInBatch;
+    boolean end;
+
     public Project(Operator base, ArrayList<Attribute> as, int type) {
         super(type);
         this.base = base;
         this.attrset = as;
+        this.numOfBuffers = BufferManager.getNumberOfBuffers();
     }
 
     public Operator getBase() {
@@ -60,7 +73,6 @@ public class Project extends Operator {
         batchsize = Batch.getPageSize() / tuplesize;
 
         if (!base.open()) return false;
-
         /** The following loop finds the index of the columns that
          ** are required from the base operator
          **/
@@ -77,6 +89,12 @@ public class Project extends Operator {
             int index = baseSchema.indexOf(attr.getBaseAttribute());
             attrIndex[i] = index;
         }
+        /**
+         * Index on inbatch
+         */
+        buffer = new LinkedList<Batch>();
+        indexInBatch = 0;
+        end = false;
         return true;
     }
 
@@ -85,14 +103,17 @@ public class Project extends Operator {
      */
     public Batch next() {
         outbatch = new Batch(batchsize);
-        /** all the tuples in the inbuffer goes to the output buffer **/
-        inbatch = base.next();
 
-        if (inbatch == null) {
+        if(buffer.isEmpty()) {
+            genBlock();
+        }
+
+        if(end) {
             return null;
         }
 
         for (int i = 0; i < inbatch.size(); i++) {
+
             Tuple basetuple = inbatch.get(i);
             //Debug.PPrint(basetuple);
             //System.out.println();
@@ -103,9 +124,38 @@ public class Project extends Operator {
             }
             Tuple outtuple = new Tuple(present);
             outbatch.add(outtuple);
+
         }
+        buffer.poll();
+        inbatch = buffer.peek();
         return outbatch;
     }
+
+    public void genBlock() {
+        int numOfInputBuffers = numOfBuffers - 1;
+
+        inbatch = base.next();
+
+        if(inbatch == null) {
+            end = true;
+            return;
+        }
+        buffer.add(inbatch);
+
+        Batch batch;
+        for(int i = 1; i < numOfInputBuffers; i++) {
+
+            batch = base.next();
+            if(batch == null) {
+                end = true;
+                break;
+            }
+
+            buffer.add(batch);
+        }
+
+    }
+
 
     /**
      * Close the operator
