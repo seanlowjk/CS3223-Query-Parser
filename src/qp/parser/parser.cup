@@ -1,5 +1,6 @@
 package qp.parser;
 
+import qp.operators.OpType;
 import qp.utils.*;
 import java_cup.runtime.*;
 import java.util.*;
@@ -51,9 +52,18 @@ nonterminal Condition condition;
 nonterminal Condition op;
 
 /* The grammar */
-mainquery ::= finalquery:s INTERSECT ALL finalquery:t
+mainquery ::= finalquery:s INTERSECT finalquery:t
 		{:
 			SQLQuery r = new SQLQuery(s, t);
+			r.setSetOperationType(OpType.INTERSECT);
+			r.setIsDistinct(true);
+			parser.query = r;
+			RESULT = r;
+		:} 
+		| finalquery:s INTERSECT ALL finalquery:t
+		{:
+			SQLQuery r = new SQLQuery(s, t);
+			r.setSetOperationType(OpType.INTERSECT);
 			parser.query = r;
 			RESULT = r;
 		:} 
