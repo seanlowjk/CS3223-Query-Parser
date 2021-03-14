@@ -32,7 +32,6 @@ public class BlockNestedJoin extends Join {
     int rcurs;                      // Cursor for right side buffer
     boolean eosl;                   // Whether end of stream (left table) is reached
     boolean eosr;                   // Whether end of stream (right table) is reached
-    int countLeft = 0;
 
     public BlockNestedJoin(Join jn) {
         super(jn.getLeft(), jn.getRight(), jn.getConditionList(), jn.getOpType());
@@ -231,6 +230,6 @@ public class BlockNestedJoin extends Join {
     public boolean close() {
         File f = new File(rfname);
         f.delete();
-        return true;
+        return left.close() && right.close();
     }
 }

@@ -29,7 +29,6 @@ public class Intersect extends SetOperator {
     int rcurs;                      // Cursor for right side buffer
     boolean eosl;                   // Whether end of stream (left table) is reached
     boolean eosr;                   // Whether end of stream (right table) is reached
-    int countLeft = 0;
 
     public Intersect(Operator left, Operator right, int opType) {
         super(left, right, opType);
@@ -222,6 +221,6 @@ public class Intersect extends SetOperator {
     public boolean close() {
         File f = new File(rfname);
         f.delete();
-        return true;
+        return left.close() && right.close();
     }
 }
