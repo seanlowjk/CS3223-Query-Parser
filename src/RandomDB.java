@@ -7,6 +7,7 @@ import java.util.*;
 public class RandomDB {
 
     static boolean[] pk;
+    static HashSet<Long> time = new HashSet<>();
     static HashMap<Integer, HashSet<Integer>> fk = new HashMap<>();
     private static Random random;
 
@@ -132,15 +133,6 @@ public class RandomDB {
                             }
                             pk[numb] = true;
                             outtbl.print(numb + "\t");
-                        } else if(datatype[j].equals("TIME")) {
-                            if (keytype[j].equals("PK")) {
-                                int numb = random.nextInt(range[0]);
-                                while (pk[numb] == true) {
-                                    numb = random.nextInt(range[0]);
-                                }
-                                pk[numb] = true;
-                                outtbl.print(numb + "\t");
-                            }
                         } else {
                             int value = random.nextInt(range[j]);
                             outtbl.print(value + "\t");
@@ -148,11 +140,16 @@ public class RandomDB {
                                 fk.get(j).add(value);
                             }
                         }
+                    } else if (datatype[j].equals("TIME")) {
+                        long numb = random.nextLong();
+                        time.add(numb);
+                        outtbl.print(numb + "\t");
                     }
                 }
                 if (i != numtuple - 1)
                     outtbl.println();
             }
+
             outtbl.close();
 
             /** printing the number of distinct values of each column
@@ -176,6 +173,9 @@ public class RandomDB {
                         else
                             outstat.print(range[i] + "\t");
                     }
+                } else if(datatype.equals("TIME")) {
+                    int numDist = time.size();
+                    outstat.print(numDist + "\t");
                 }
             }
             outstat.close();
