@@ -16,11 +16,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 public class Union extends SetOperator {
-
-    static int filenum = 0;         // To get unique filenum for this operation
     int batchsize;                  // Number of tuples per out batch
-    String lfname;                  // The file name where the left table is materialized
-    String rfname;                  // The file name where the right table is materialized
     Batch outbatch;                 // Buffer page for output
 
     boolean eosl;                   // Whether end of stream (left table) is reached
