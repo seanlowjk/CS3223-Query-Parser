@@ -23,9 +23,6 @@ public class Union extends SetOperator {
     String rfname;                  // The file name where the right table is materialized
     Batch outbatch;                 // Buffer page for output
 
-    ObjectInputStream lin;          // File pointer to the left hand materialized file
-    ObjectInputStream rin;          // File pointer to the right hand materialized file
-
     boolean eosl;                   // Whether end of stream (left table) is reached
     boolean eosr;                   // Whether end of stream (right table) is reached
 
@@ -50,53 +47,7 @@ public class Union extends SetOperator {
         eosl = false;
         eosr = false;
 
-        Batch leftpage;
-        if (!left.open()) {
-            return false;
-        } else {
-            /** If the right operator is not a base table then
-             ** Materialize the intermediate result from right
-             ** into a file
-             **/
-            filenum++;
-            lfname = "Utemp-" + String.valueOf(filenum);
-            try {
-                ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(lfname));
-                while ((leftpage = left.next()) != null) {
-                    out.writeObject(leftpage);
-                }
-                out.close();
-            } catch (IOException io) {
-                System.out.println("Union: Error writing to temporary file");
-                return false;
-            }
-            if (!left.close()) {
-                return false;
-            }
-        }
-
-        Batch rightpage;
-        if (!right.open()) {
-            return false;
-        } else {
-            /** If the right operator is not a base table then
-             ** Materialize the intermediate result from right
-             ** into a file
-             **/
-            filenum++;
-            rfname = "Utemp-" + String.valueOf(filenum);
-            try {
-                ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(rfname));
-                while ((rightpage = right.next()) != null) {
-                    out.writeObject(rightpage);
-                }
-                out.close();
-            } catch (IOException io) {
-                System.out.println("Union: Error writing to temporary file");
-                return false;
-            }
-            return right.close();
-        }
+        return left.open() && right.open();
     }
 
     @Override
@@ -108,42 +59,20 @@ public class Union extends SetOperator {
         }
 
         while (!eosl) {
-            try {
-                Batch leftbatch = (Batch) lin.readObject();
+            Batch leftbatch = left.next();
+            if (leftbatch == null) {
+                eosl = true;
+            } else {
                 return leftbatch;
-            } catch (EOFException e) {
-                try {
-                    lin.close();
-                } catch (IOException io) {
-                    System.out.println("Union: Error in reading temporary file");
-                }
-                eosl = true; 
-            } catch (ClassNotFoundException c) {
-                System.out.println("Union: Error in deserialising temporary file ");
-                System.exit(1);
-            } catch (IOException io) {
-                System.out.println("Union: Error in reading temporary file");
-                System.exit(1);
             }
         }
 
         while (!eosr) {
-            try {
-                Batch rightbatch = (Batch) lin.readObject();
-                return rightbatch;
-            } catch (EOFException e) {
-                try {
-                    rin.close();
-                } catch (IOException io) {
-                    System.out.println("Union: Error in reading temporary file");
-                }
+            Batch rightbatch = right.next();
+            if (rightbatch == null) {
                 eosr = true;
-            } catch (ClassNotFoundException c) {
-                System.out.println("Union: Error in deserialising temporary file ");
-                System.exit(1);
-            } catch (IOException io) {
-                System.out.println("Union: Error in reading temporary file");
-                System.exit(1);
+            } else {
+                return rightbatch;
             }
         }
 
@@ -154,8 +83,6 @@ public class Union extends SetOperator {
      * Close the operator
      */
     public boolean close() {
-        File f = new File(rfname);
-        f.delete();
         return left.close() && right.close();
     }
 
