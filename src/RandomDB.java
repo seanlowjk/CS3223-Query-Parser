@@ -1,12 +1,26 @@
 import qp.utils.Attribute;
 import qp.utils.Schema;
 
-import java.io.*;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
+import java.sql.Time;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Random;
+import java.util.StringTokenizer;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class RandomDB {
 
     static boolean[] pk;
+    static HashSet<Long> time = new HashSet<>();
     static HashMap<Integer, HashSet<Integer>> fk = new HashMap<>();
     private static Random random;
 
@@ -43,6 +57,7 @@ public class RandomDB {
             int numCol = Integer.parseInt(line);
             String[] datatype = new String[numCol];
             int[] range = new int[numCol];
+            long timeRange = 0;
             String[] keytype = new String[numCol];
 
             /** second line is <size of tuple = number of bytes> **/
@@ -77,6 +92,8 @@ public class RandomDB {
                     // System.out.println("String");
                 } else if (datatype[i].equals("REAL")) {
                     type = Attribute.REAL;
+                } else if (datatype[i].equals("TIME")) {
+                    type = Attribute.TIME;
                 } else {
                     type = -1;
                     System.err.println("invalid data type");
@@ -84,7 +101,12 @@ public class RandomDB {
                 }
 
                 /** range of the values allowed **/
-                range[i] = Integer.parseInt(tokenizer.nextToken());
+                String token =  tokenizer.nextToken();
+                try {
+                    range[i] = Integer.parseInt(token);
+                } catch (NumberFormatException e) {
+                    timeRange = Long.parseLong(token);
+                }
 
                 /** key type PK/FK/NK **/
                 keytype[i] = tokenizer.nextToken();
@@ -137,11 +159,18 @@ public class RandomDB {
                                 fk.get(j).add(value);
                             }
                         }
+                    } else if (datatype[j].equals("TIME")) {
+                        long numb = ThreadLocalRandom.current().nextLong(timeRange);
+                        Time t = new Time(numb);
+                        time.add(numb);
+
+                        outtbl.print(t + "\t");
                     }
                 }
                 if (i != numtuple - 1)
                     outtbl.println();
             }
+
             outtbl.close();
 
             /** printing the number of distinct values of each column
@@ -165,6 +194,9 @@ public class RandomDB {
                         else
                             outstat.print(range[i] + "\t");
                     }
+                } else if(datatype.equals("TIME")) {
+                    int numDist = time.size();
+                    outstat.print(numDist + "\t");
                 }
             }
             outstat.close();
