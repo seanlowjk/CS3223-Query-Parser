@@ -177,6 +177,7 @@ public class RandomDB {
              in <tablename>.stat file
              **/
             for (i = 0; i < numCol; ++i) {
+                System.out.println(datatype[i]);
                 if (datatype[i].equals("STRING")) {
                     outstat.print(numtuple + "\t");
                 } else if (datatype[i].equals("FLOAT")) {
@@ -194,7 +195,7 @@ public class RandomDB {
                         else
                             outstat.print(range[i] + "\t");
                     }
-                } else if(datatype.equals("TIME")) {
+                } else if(datatype[i].equals("TIME")) {
                     int numDist = time.size();
                     outstat.print(numDist + "\t");
                 }
