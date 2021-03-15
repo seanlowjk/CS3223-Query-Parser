@@ -6,7 +6,7 @@ This repository contains code written as part of this project and is done by:
 
 - Hsu Zhong Jun
 - Low Jun Kai, Sean
-- Ooi Xi Yi
+- Ng Xin Pei
 
 ## Modifications
 The following modifications to the original template was made by the team:
