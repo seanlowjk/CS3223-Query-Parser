@@ -74,6 +74,10 @@ public class Sort extends Operator {
 
     @Override
     public Batch next() {
+        if (inputStream == null) {
+            return null;
+        }
+        
         return BatchUtils.readBatch(inputStream);
     }
 
@@ -144,10 +148,10 @@ public class Sort extends Operator {
             FileInputStream fileInputStream = new FileInputStream(mergedSortedRun);
             ObjectInputStream generatedInputStream = new ObjectInputStream(fileInputStream);
             this.inputStream = generatedInputStream;
-            return true;
         } catch (Exception exception) {
-            return false;
+            this.inputStream = null;
         }
+        return true;
     }
 
     /**
