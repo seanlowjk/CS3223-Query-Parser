@@ -80,7 +80,13 @@ public class GroupBy extends Operator {
 
         ArrayList<File> sortedRuns = createSortedRuns(batchSize);
         this.distinctFiles = mergeSortedRunsAndRemoveDups(sortedRuns, batchSize);
-        this.distinctOut = BatchUtils.createInputStreams(this.distinctFiles).get(0);
+        List<ObjectInputStream> inputstreams = BatchUtils.createInputStreams(this.distinctFiles);
+
+        if (inputstreams.isEmpty()) {
+            this.distinctOut = null;
+        } else {
+            this.distinctOut = BatchUtils.createInputStreams(this.distinctFiles).get(0);
+        }
 
         return true;
     }
@@ -90,6 +96,10 @@ public class GroupBy extends Operator {
      */
     @Override
     public Batch next() {
+        if (this.distinctOut == null) {
+            return null;
+        }
+
         return BatchUtils.readBatch(this.distinctOut);
     }
 
