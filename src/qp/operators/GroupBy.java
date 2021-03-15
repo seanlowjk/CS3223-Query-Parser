@@ -107,7 +107,8 @@ public class GroupBy extends Operator {
 
     @Override
     public Object clone() {
-        return new GroupBy(base, attrList);
+        Operator newBase = (Operator) base.clone();
+        return new GroupBy(newBase, attrList);
     }
 
     /**
