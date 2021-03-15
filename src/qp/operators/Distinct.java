@@ -124,7 +124,8 @@ public class Distinct extends Operator {
 
     @Override
     public Object clone() {
-        return new Distinct(base, attrList);
+        Operator newBase = (Operator) base.clone();
+        return new Distinct(newBase, attrList);
     }
 
     /**
