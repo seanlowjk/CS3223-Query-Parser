@@ -57,13 +57,27 @@ public class SortMergeJoin extends Join {
 
         /** find indices attributes of join conditions **/
         leftindex = new ArrayList<>();
+        ArrayList<Attribute> leftAttributes = new ArrayList<>();
         rightindex = new ArrayList<>();
+        ArrayList<Attribute> rightAttributes = new ArrayList<>();
         for (Condition con : conditionList) {
             Attribute leftattr = con.getLhs();
             Attribute rightattr = (Attribute) con.getRhs();
+
             leftindex.add(left.getSchema().indexOf(leftattr));
+            leftAttributes.add(leftattr);
             rightindex.add(right.getSchema().indexOf(rightattr));
+            rightAttributes.add(rightattr);
         }
+
+        Sort leftSort = new Sort(left, leftAttributes, numBuff, false, OpType.SORT);
+        leftSort.setSchema(left.getSchema());
+        setLeft(leftSort);
+
+        Sort rightSort = new Sort(right, rightAttributes, numBuff, false, OpType.SORT);
+        rightSort.setSchema(right.getSchema());
+        setRight(rightSort);
+
         Batch rightpage;
 
         /** initialize the cursors of input buffers **/
