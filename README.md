@@ -1,4 +1,3 @@
-
 # CS3223 Database Systems Implementation
 
 This project is part of the CS3223 Database Systems Implementation module taken at the National University of Singapore (NUS) School of Computing in AY2020/21 Semester 2. The project focuses on a simple SPJ (Select-Project-Join) query engine and its implementation, which provides some insights into how a modern database management system (DBMS) works in practice.
