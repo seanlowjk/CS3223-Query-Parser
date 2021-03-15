@@ -194,7 +194,7 @@ public class RandomDB {
                         else
                             outstat.print(range[i] + "\t");
                     }
-                } else if(datatype.equals("TIME")) {
+                } else if(datatype[i].equals("TIME")) {
                     int numDist = time.size();
                     outstat.print(numDist + "\t");
                 }
