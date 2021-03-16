@@ -11,7 +11,6 @@ num_pages=$6
 echo "==========================================="
 echo "Step 0: Preprocess"
 echo "==========================================="
-rm AIRCRAFTS.sql CERTIFIED.sql EMPLOYEES.sql FLIGHTS.sql SCHEDULE.sql
 touch AIRCRAFTS.sql CERTIFIED.sql EMPLOYEES.sql FLIGHTS.sql SCHEDULE.sql
 
 echo "Step 1: Populate Tables"
@@ -52,3 +51,5 @@ echo "==========================================="
 echo "Step 6: Check Diff"
 echo "==========================================="
 diff $parser_ouput_file $psql_output_file
+
+rm AIRCRAFTS.sql CERTIFIED.sql EMPLOYEES.sql FLIGHTS.sql SCHEDULE.sql
