@@ -171,6 +171,7 @@ public class RandomDB {
                     outtbl.println();
             }
 
+            outtbl.println();
             outtbl.close();
 
             /** printing the number of distinct values of each column
