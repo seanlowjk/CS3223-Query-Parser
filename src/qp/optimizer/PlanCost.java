@@ -225,6 +225,7 @@ public class PlanCost {
                 break;
             case JoinType.BLOCKNESTED:
                 joincost = (long)Math.ceil(leftpages/(numbuff -2)) * rightpages;
+                break;
             case JoinType.SORTMERGE:
                 joincost =  Sort.calculateTotalIOCost((int) leftpages, (int) numbuff)
                     + Sort.calculateTotalIOCost((int) rightpages, (int) numbuff)
