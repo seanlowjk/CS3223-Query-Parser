@@ -31,7 +31,7 @@ public class RandomOptimizer {
     /**
      * To keep track of maximum tuple size in case is not given enough
      */
-    public static int maxTupleSize = 0;  
+    public static int maxTupleSize = 0;
 
     SQLQuery sqlquery;  // Vector of Vectors of Select + From + Where + GroupBy
     int numJoin;        // Number of joins in this query plan
@@ -146,7 +146,7 @@ public class RandomOptimizer {
 
     /**
      * Implementation of Iterative Improvement Algorithm for Randomized optimization of Query Plan
-     * @param operators additional operators provided if it's a set operation 
+     * @param operators additional operators provided if it's a set operation
      **/
     public Operator getOptimizedPlan(Operator... operators) {
         /** get an initial plan for the given sql query **/
