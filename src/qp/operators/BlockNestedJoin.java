@@ -24,12 +24,13 @@ public class BlockNestedJoin extends Join {
     ArrayList<Integer> rightindex;  // Indices of the join attributes in right table
     String rfname;                  // The file name where the right table is materialized
     Batch outbatch;                 // Buffer page for output
-    Queue<Batch> leftBlock;         // Buffer block for left input stream
+    ArrayList<Batch> leftBlock;     // Buffer block for left input stream
     Batch leftbatch;                // Buffer page for left input stream 
     Batch rightbatch;               // Buffer page for right input stream
     ObjectInputStream in;           // File pointer to the right hand materialized file
 
-    int lcurs; 
+    int lbatch;                     // Cursor for left side buffer for batch number
+    int lcurs;                      // Cursor for left side buffer for tuple number 
     int rcurs;                      // Cursor for right side buffer
     boolean eosl;                   // Whether end of stream (left table) is reached
     boolean eosr;                   // Whether end of stream (right table) is reached
@@ -64,6 +65,8 @@ public class BlockNestedJoin extends Join {
         Batch rightpage;
 
         /** initialize the cursors of input buffers **/
+        lbatch = 0;
+        lcurs = 0;
         rcurs = 0;
         eosl = false;
         /** because right stream is to be repetitively scanned
@@ -72,7 +75,7 @@ public class BlockNestedJoin extends Join {
         eosr = true;
 
         /* Initialize the leftBlock, aka the left buffer. */
-        leftBlock = new LinkedList<>();
+        leftBlock = new ArrayList<>();
 
         /** Right hand side table is to be materialized
          ** for the  Block Nested join to perform
@@ -103,109 +106,105 @@ public class BlockNestedJoin extends Join {
         return left.open();
     }
 
+    /**
+     * from input buffers selects the tuples satisfying join condition
+     * * And returns a page of output tuples
+     **/
     @Override
     public Batch next() {
-        outbatch = new Batch(batchsize);
-
+        int h, i, j;
         if (eosl) {
             return null;
         }
-
+        outbatch = new Batch(batchsize);
         while (!outbatch.isFull()) {
-            try {
-                // need new left page
-                if (leftBlock.isEmpty()) {
-                    /** new left page is to be fetched**/
-                    leftBlock = generateLeftBuffer(); 
-                    if (leftBlock.isEmpty()) {
-                        eosl = true;
-                        if (outbatch.isEmpty()) {
-                            return null;
-                        } else {
-                            return outbatch;
-                        }
-                    }
+            if (lbatch == 0 && lcurs == 0 && eosr == true) {
+                /** new left page is to be fetched**/
+                try {
+                    leftBlock = generateLeftBuffer();
+                } catch (Exception e) {
+                    System.out.println(e.getMessage());
+                    System.exit(1);
                 }
-
-                if (eosr) {
-                    /** Whenever a new left page came, we have to start the
-                    ** scanning of right table
-                    **/
-                    try {
-                        in = new ObjectInputStream(new FileInputStream(rfname));
-                        eosr = false;
-                    } catch (IOException io) {
-                        System.err.println("BlockNestedJoin:error in reading the file");
-                        System.exit(1);
-                    }
+                if (leftBlock.size() == 0) {
+                    eosl = true;
+                    return outbatch;
                 }
-            } catch (IOException io) {
-                System.err.println("BlockNestedJoin:error in reading the file");
-                System.exit(1);
-            } catch (Exception e) {
-                System.out.println(e.getMessage());
-                System.exit(1);
+                /** Whenever a new left page came, we have to start the
+                 ** scanning of right table
+                 **/
+                try {
+                    in = new ObjectInputStream(new FileInputStream(rfname));
+                    eosr = false;
+                } catch (IOException io) {
+                    System.err.println("NestedJoin:error in reading the file");
+                    System.exit(1);
+                }
             }
-            getJoinBatch();
+
+            while (eosr == false) {
+                try {
+                    if (rcurs == 0 && lcurs == 0 && lbatch == 0) {
+                        rightbatch = (Batch) in.readObject();
+                    }
+                    for (h = lbatch; h < leftBlock.size(); ++h) {
+                        leftbatch = leftBlock.get(h);
+                        for (i = lcurs; i < leftbatch.size(); ++i) {
+                            for (j = rcurs; j < rightbatch.size(); ++j) {
+                                Tuple lefttuple = leftbatch.get(i);
+                                Tuple righttuple = rightbatch.get(j);
+                                if (lefttuple.checkJoin(righttuple, leftindex, rightindex)) {
+                                    Tuple outtuple = lefttuple.joinWith(righttuple);
+                                    outbatch.add(outtuple);
+                                    if (outbatch.isFull()) {
+                                        if (i == leftbatch.size() - 1 && j == rightbatch.size() - 1) {  //case 1
+                                            lbatch = h + 1; 
+                                            lcurs = 0;
+                                            rcurs = 0;
+                                        } else if (i != leftbatch.size() - 1 && j == rightbatch.size() - 1) {  //case 2
+                                            lbatch = h;
+                                            lcurs = i + 1;
+                                            rcurs = 0;
+                                        } else if (i == leftbatch.size() - 1 && j != rightbatch.size() - 1) {  //case 3
+                                            lbatch = h;
+                                            lcurs = i;
+                                            rcurs = j + 1;
+                                        } else {
+                                            lbatch = h;
+                                            lcurs = i;
+                                            rcurs = j + 1;
+                                        }
+                                        return outbatch;
+                                    }
+                                }
+                            }
+                            rcurs = 0;
+                        }
+                        lcurs = 0;
+                    }
+                    lbatch = 0;
+                } catch (EOFException e) {
+                    try {
+                        in.close();
+                    } catch (IOException io) {
+                        System.out.println("NestedJoin: Error in reading temporary file");
+                    }
+                    eosr = true;
+                } catch (ClassNotFoundException c) {
+                    System.out.println("NestedJoin: Error in deserialising temporary file ");
+                    System.exit(1);
+                } catch (IOException io) {
+                    System.out.println("NestedJoin: Error in reading temporary file");
+                    System.exit(1);
+                }
+            }
         }
         return outbatch;
     }
 
-    public void getJoinBatch() {
-        try {
-            while (!eosr) {
-                if (rcurs == 0) {
-                    rightbatch = (Batch) in.readObject();
-                }
-                while (!leftBlock.isEmpty()) {
-                    Tuple leftTuple = leftBlock.peek();
-                    for (int i = rcurs; i < rightbatch.size(); i++) {
-                        Tuple rightTuple = rightbatch.get(i);
-                        if (leftTuple.checkJoin(rightTuple, leftindex, rightindex)) {
-                            Tuple joinedTuple = leftTuple.joinWith(rightTuple);
-                            outbatch.add(joinedTuple);
-                            if (outbatch.isFull()) {
-                                rcurs = i; 
-                                if (!leftBlock.isEmpty() && rcurs != rightbatch.size() - 1) {
-                                    rcurs++;
-                                } else if (!leftBlock.isEmpty() && rcurs == rightbatch.size() - 1) {
-                                    rightbatch = (Batch) in.readObject();
-                                    rcurs = 0;
-                                } else if (leftBlock.isEmpty() && rcurs != rightbatch.size() - 1) {
-                                    // Do Nothing here. 
-                                } else { // if (leftBlock.isEmpty() && rcurs == rightbatch.size() - 1) 
-                                    rightbatch = (Batch) in.readObject();
-                                    rcurs = 0;
-                                }
-                                break;
-                            }
-                        } 
-                    }
-                    rightbatch = (Batch) in.readObject();
-                    rcurs = 0;
-                }
-            }
-        } catch (EOFException e) {
-            try {
-                in.close();
-            } catch (IOException io) {
-                System.out.println("NestedJoin: Error in reading temporary file");
-            }
-            leftBlock.poll(); 
-            eosr = true;
-        } catch (ClassNotFoundException c) {
-            System.out.println("NestedJoin: Error in deserialising temporary file ");
-            System.exit(1);
-        } catch (IOException io) {
-            System.out.println("NestedJoin: Error in reading temporary file");
-            System.exit(1);
-        }
-
-    }
-
-    public Queue<Batch> generateLeftBuffer() throws Exception {
+    public ArrayList<Batch> generateLeftBuffer() throws Exception {
         int numAvailableBuffers = numBuff - 2;
-        Queue<Batch> leftBuffer = new LinkedList<>();
+        ArrayList<Batch> leftBuffer = new ArrayList<>();
 
         if (eosl) {
             return leftBuffer;
