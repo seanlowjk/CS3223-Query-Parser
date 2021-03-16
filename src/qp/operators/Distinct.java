@@ -55,7 +55,7 @@ public class Distinct extends Operator {
         if (list == null || list.size() == 0) {
             return base.getSchema().getAttList();
         } else {
-            return list; 
+            return list;
         }
     }
 
@@ -82,7 +82,7 @@ public class Distinct extends Operator {
         }
 
         int tupleSize = schema.getTupleSize() != 0
-            ? schema.getTupleSize() 
+            ? schema.getTupleSize()
             : base.getSchema().getTupleSize();
         batchSize = Batch.getPageSize() / tupleSize;
 
@@ -135,7 +135,16 @@ public class Distinct extends Operator {
     @Override
     public Object clone() {
         Operator newBase = (Operator) base.clone();
-        return new Distinct(newBase, attrList);
+        ArrayList<Attribute> newAttr = new ArrayList<>();
+
+        for (int i = 0; i < this.attrList.size(); i++) {
+            newAttr.add((Attribute) this.attrList.get(i).clone());
+        }
+
+        Distinct newDistinct = new Distinct(newBase, newAttr);
+        Schema newSchema = newBase.getSchema().subSchema(newAttr);
+        newDistinct.setSchema(newSchema);
+        return newDistinct;
     }
 
     /**

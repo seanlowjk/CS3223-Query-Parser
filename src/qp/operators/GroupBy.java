@@ -9,6 +9,7 @@ import qp.utils.Attribute;
 import qp.utils.AttributeDirection;
 import qp.utils.Batch;
 import qp.utils.BatchUtils;
+import qp.utils.Schema;
 import qp.utils.Tuple;
 import qp.utils.TupleComparator;
 
@@ -118,7 +119,16 @@ public class GroupBy extends Operator {
     @Override
     public Object clone() {
         Operator newBase = (Operator) base.clone();
-        return new GroupBy(newBase, attrList);
+        ArrayList<Attribute> newAttr = new ArrayList<>();
+
+        for (int i = 0; i < this.attrList.size(); i++) {
+            newAttr.add((Attribute) this.attrList.get(i).clone());
+        }
+
+        GroupBy newGroupBy = new GroupBy(newBase, newAttr);
+        Schema newSchema = newBase.getSchema().subSchema(newAttr);
+        newGroupBy.setSchema(newSchema);
+        return newGroupBy;
     }
 
     /**
@@ -171,7 +181,7 @@ public class GroupBy extends Operator {
 
             if (sortedRuns.size() > 0) {
                 // Generates a file written with the generated sorted files.
-                String filename = String.format("distinct-X-%d", fileNumber);
+                String filename = String.format("groupby-X-%d", fileNumber);
                 File sortedRunsFile = BatchUtils.writeRuns(sortedRuns, filename);
                 fileNumber ++;
                 outputFiles.add(sortedRunsFile);
@@ -222,7 +232,7 @@ public class GroupBy extends Operator {
 
                 // Initialise empty file to append buffer to
                 List<Batch> outputBufferBatches = new ArrayList<>();
-                String roundPartFilename = String.format("distinct-%d-%d", roundNum, i);
+                String roundPartFilename = String.format("groupby-%d-%d", roundNum, i);
 
                 // Perform (B - 1)-way merges
                 boolean hasRemaining = true;
