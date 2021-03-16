@@ -121,7 +121,7 @@ public class Sort extends Operator {
      * 2 X |R| X numberOfPasses.
      */
     public static int calculateTotalIOCost(int numberOfPages, int numberOfBuffers) {
-        return 2 * numberOfPages + calculateNumberOfPasses(numberOfPages, numberOfBuffers);
+        return 2 * numberOfPages * calculateNumberOfPasses(numberOfPages, numberOfBuffers);
     }
 
     /**
