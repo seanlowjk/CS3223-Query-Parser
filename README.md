@@ -19,15 +19,12 @@ The following modifications to the original template was made by the team:
 
 As part of the bonus tasks, the team have made the following additional modifications:
 
-- The `INTERSECT` and `INTERSECT ALL` operator (qp.operators.Intersect)
+- The `INTERSECT` and `INTERSECT ALL` operators (qp.operators.Intersect)
+- The `UNION` and `UNION ALL` operators (qp.operators.Union)
 - The `TIME` datatype
 
-## Experiment results
+## Setup Instructions
+As this project is written in Java (primarily Java 11), ensure that you have [Java](https://openjdk.java.net/projects/jdk/11/) installed in your system.
 
-To test our team's implementation of the query engine, some experiments were performed using the `Flights`, `Aircrafts`, `Schedule`, `Certified` and `Employees` table. The following are the results of each experiment:
-
-### Joins
-TODO: To include the timings, the plans used, and a discussion of the differences (if any) between timings on different algorithms and different plans.   Also discuss why query execution plan orderings can make a more significant difference in a real-world system with larger data sets.
-
-### Scheduled pilots
-TODO: Include above information.
+1. Navigate to the project root and set up the environment using `source queryenv` (for Unix users) or `queryenv.bat` (for Windows users).
+2. Build the Java project using `build.sh` (for Unix users) or `build.bat` (for Windows users).
