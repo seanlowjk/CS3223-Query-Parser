@@ -50,6 +50,6 @@ tail -n +2 "$parser_ouput_file" > "$parser_ouput_file.tmp" && mv "$parser_ouput_
 echo "==========================================="
 echo "Step 6: Check Diff"
 echo "==========================================="
-diff $parser_ouput_file $psql_output_file
+diff <(sort $parser_ouput_file) <(sort $psql_output_file)
 
 rm AIRCRAFTS.sql CERTIFIED.sql EMPLOYEES.sql FLIGHTS.sql SCHEDULE.sql
