@@ -202,6 +202,11 @@ public class BlockNestedJoin extends Join {
     }
 
     public Queue<Tuple> generateLeftBuffer() throws Exception {
+
+        if(left instanceof Scan) {
+            return ((Scan) left).nextBlock((numBuff - 2) * batchsize);
+        }
+
         int numAvailableBuffers = numBuff - 2;
         Queue<Tuple> leftBuffer = new LinkedList<Tuple>();
 

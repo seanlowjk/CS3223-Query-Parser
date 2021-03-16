@@ -12,6 +12,7 @@ import java.io.EOFException;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.util.LinkedList;
 
 /**
  * Scan operator - read data from a file
@@ -83,6 +84,32 @@ public class Scan extends Operator {
             }
         }
         return tuples;
+    }
+
+    public LinkedList<Tuple> nextBlock(int numberOfTuples) {
+
+        LinkedList<Tuple> block = new LinkedList<Tuple>();
+
+        for(int i = 0; i < numberOfTuples; i++) {
+            try {
+                Tuple data = (Tuple) in.readObject();
+                block.add(data);
+            } catch (ClassNotFoundException cnf) {
+                System.err.println("Scan:Class not found for reading file  " + filename);
+                System.exit(1);
+            } catch (EOFException EOF) {
+                /** At this point incomplete page is sent and at next call it considered
+                 ** as end of file
+                 **/
+                eos = true;
+                return block;
+            } catch (IOException e) {
+                System.err.println("Scan:Error reading " + filename);
+                System.exit(1);
+            }
+        }
+
+        return block;
     }
 
     /**
