@@ -24,10 +24,12 @@ public class BlockNestedJoin extends Join {
     ArrayList<Integer> rightindex;  // Indices of the join attributes in right table
     String rfname;                  // The file name where the right table is materialized
     Batch outbatch;                 // Buffer page for output
-    Queue<Tuple> leftBlock;         // Buffer block for left input stream
+    Queue<Batch> leftBlock;         // Buffer block for left input stream
+    Batch leftbatch;                // Buffer page for left input stream 
     Batch rightbatch;               // Buffer page for right input stream
     ObjectInputStream in;           // File pointer to the right hand materialized file
 
+    int lcurs; 
     int rcurs;                      // Cursor for right side buffer
     boolean eosl;                   // Whether end of stream (left table) is reached
     boolean eosr;                   // Whether end of stream (right table) is reached
@@ -201,9 +203,9 @@ public class BlockNestedJoin extends Join {
 
     }
 
-    public Queue<Tuple> generateLeftBuffer() throws Exception {
+    public Queue<Batch> generateLeftBuffer() throws Exception {
         int numAvailableBuffers = numBuff - 2;
-        Queue<Tuple> leftBuffer = new LinkedList<Tuple>();
+        Queue<Batch> leftBuffer = new LinkedList<>();
 
         if (eosl) {
             return leftBuffer;
@@ -214,12 +216,9 @@ public class BlockNestedJoin extends Join {
             if (leftBatch == null || leftBatch.isEmpty()) {
                 return leftBuffer;
             } else {
-                for(int j = 0; j < leftBatch.size(); j++) {
-                    leftBuffer.add(leftBatch.get(j));
-                }
+                leftBuffer.add(leftBatch);
             }
         }
-
         return leftBuffer; 
     }
 
