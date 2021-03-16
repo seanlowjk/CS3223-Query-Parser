@@ -1,0 +1,36 @@
+DROP TABLE IF EXISTS AIRCRAFTS;
+DROP TABLE IF EXISTS EMPLOYEES;
+DROP TABLE IF EXISTS CERTIFIED;
+DROP TABLE IF EXISTS FLIGHTS;
+DROP TABLE IF EXISTS SCHEDULE;
+
+CREATE TABLE AIRCRAFTS (
+    aid INT,
+    aname TEXT,
+    cruisingrange INT
+);
+
+CREATE TABLE CERTIFIED (
+    eid INT,
+    aid INT
+);
+
+CREATE TABLE EMPLOYEES (
+    eid INT,
+    ename TEXT,
+    salary INT
+);
+
+CREATE TABLE FLIGHTS (
+    flno INT,
+    from TEXT,
+    to TEXT,
+    distance INT,
+    departs TIME,
+    arrives TIME
+);
+
+CREATE TABLE SCHEDULE (
+    flno INT,
+    aid INT
+);
