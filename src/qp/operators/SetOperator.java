@@ -21,7 +21,7 @@ public class SetOperator extends Operator {
         this.left = left;
         this.right = right;
         if (!this.left.getSchema().checkCompat(this.right.getSchema())) {
-            System.out.println("Check your relations for union compatibility");
+            System.out.println("Check your relations for set compatibility");
             System.exit(1);
         }
         schema = this.left.getSchema(); 
