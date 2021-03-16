@@ -1,5 +1,7 @@
 input="$COMPONENT/$1.txt"
 output="$COMPONENT/$1.sql"
+
+rm $output
 while IFS= read -r line
 do
   count=0
@@ -12,7 +14,7 @@ do
       echo -n ", " >> $output
     fi 
     ((count=count+1))
-    echo -n $word >> $output
+    echo -n "'$word'" >> $output
   done 
   echo ");" >> $output
 done < "$input"
