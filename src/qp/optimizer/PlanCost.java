@@ -84,6 +84,8 @@ public class PlanCost {
             return getStatistics((GroupBy) node);
         } else if (node.getOpType() == OpType.INTERSECT) {
             return getStatistics((Intersect) node);
+        } else if (node.getOpType() == OpType.UNION) {
+            return getStatistics((Union) node);
         }
         System.out.println("operator is not supported");
         isFeasible = false;
@@ -128,6 +130,41 @@ public class PlanCost {
         long numbuff = BufferManager.getBuffersPerJoin();
         long outtuples = (long) Math.ceil(tuples);
         long joincost = (long)Math.ceil(leftpages/(numbuff -2)) * rightpages;
+        cost = cost + joincost;
+
+        return outtuples;
+    }
+
+    /**
+     * Calculate the statistics and cost of intersect operation
+     */
+    protected long getStatistics(Union node) {
+        long lefttuples = calculateCost(node.getLeft());
+        long righttuples = calculateCost(node.getRight());
+
+        if (!isFeasible) {
+            return 0;
+        }
+
+        Schema leftschema = node.getLeft().getSchema();
+        Schema rightschema = node.getRight().getSchema();
+
+        /** Get size of the tuple in output & correspondigly calculate
+         ** buffer capacity, i.e., number of tuples per page **/
+        long tuplesize = node.getSchema().getTupleSize();
+        long outcapacity = Math.max(1, Batch.getPageSize() / tuplesize);
+        long leftuplesize = leftschema.getTupleSize();
+        long leftcapacity = Math.max(1, Batch.getPageSize() / leftuplesize);
+        long righttuplesize = rightschema.getTupleSize();
+        long rightcapacity = Math.max(1, Batch.getPageSize() / righttuplesize);
+        long leftpages = (long) Math.ceil(((double) lefttuples) / (double) leftcapacity);
+        long rightpages = (long) Math.ceil(((double) righttuples) / (double) rightcapacity);
+
+        double tuples = (double) lefttuples * righttuples;
+
+        long numbuff = BufferManager.getBuffersPerJoin();
+        long outtuples = (long) Math.ceil(tuples);
+        long joincost = lefttuples + righttuples;
         cost = cost + joincost;
 
         return outtuples;

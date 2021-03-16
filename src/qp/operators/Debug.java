@@ -86,6 +86,12 @@ public class Debug {
             System.out.print("  with ");
             PPrint(((Intersect) node).getRight());
             System.out.print(")");
+        } else if (optype == OpType.UNION) {
+            System.out.print("Union(");
+            PPrint(((Union) node).getLeft());
+            System.out.print("  with ");
+            PPrint(((Union) node).getRight());
+            System.out.print(")");
         } else if (optype == OpType.JOIN) {
             int exprtype = ((Join) node).getJoinType();
             switch (exprtype) {

@@ -261,6 +261,9 @@ public class RandomInitialPlan {
             case OpType.INTERSECT:
                 root = new Intersect(left, right, OpType.INTERSECT);
                 break;
+            case OpType.UNION:
+                root = new Union(left, right, OpType.UNION);
+                break;
             default: 
                 System.out.println("Invalid Set Operation. Please use a valid set operation");
                 System.exit(1);

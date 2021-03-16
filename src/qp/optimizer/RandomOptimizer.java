@@ -60,6 +60,15 @@ public class RandomOptimizer {
             ij.setRight(right);
             ij.setNumBuff(numbuff);
             return ij;
+        } else if (node.getOpType() == OpType.UNION) {
+            Operator left = (((SetOperator) node).getLeft());
+            Operator right = (((SetOperator) node).getRight());
+            int numbuff = BufferManager.getNumberOfBuffers();
+            Union uni = new Union(left, right, OpType.UNION);
+            uni.setLeft(left);
+            uni.setRight(right);
+            uni.setNumBuff(numbuff);
+            return uni;
         } else if (node.getOpType() == OpType.JOIN) {
             Operator left = makeExecPlan(((Join) node).getLeft());
             Operator right = makeExecPlan(((Join) node).getRight());
