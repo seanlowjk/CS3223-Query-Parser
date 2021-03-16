@@ -23,8 +23,8 @@ CREATE TABLE EMPLOYEES (
 
 CREATE TABLE FLIGHTS (
     flno INT,
-    from TEXT,
-    to TEXT,
+    ffrom TEXT,
+    fto TEXT,
     distance INT,
     departs TIME,
     arrives TIME
