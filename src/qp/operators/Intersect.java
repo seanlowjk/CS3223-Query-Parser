@@ -223,4 +223,20 @@ public class Intersect extends SetOperator {
         f.delete();
         return left.close() && right.close();
     }
+
+    @Override
+    public Object clone() {
+        Operator newleft = (Operator) left.clone();
+        Operator newright = (Operator) right.clone();
+        ArrayList<Integer> newLeftIndexes = new ArrayList<>();
+        for (int idx : leftindex) {
+            newLeftIndexes.add(idx);
+        }
+
+        Intersect newIntersect = new Intersect(newleft, newright, OpType.INTERSECT);
+        newIntersect.leftindex = newLeftIndexes;
+        newIntersect.setSchema(newleft.getSchema().joinWith(newright.getSchema()));
+        newIntersect.setNumBuff(numBuff);
+        return newIntersect;
+    }
 }

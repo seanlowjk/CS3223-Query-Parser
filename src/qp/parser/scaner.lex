@@ -49,6 +49,11 @@ STRING_LITERAL=\"{CHAR}*\"
   return new Symbol(sym.WHERE,yyline,yychar,new TokenValue(yytext()));
 }
 
+<YYINITIAL,NEGATE> UNION {
+  yybegin(YYINITIAL);
+  return new Symbol(sym.UNION,yyline,yychar,new TokenValue(yytext()));
+}
+
 <YYINITIAL,NEGATE> INTERSECT {
   yybegin(YYINITIAL);
   return new Symbol(sym.INTERSECT,yyline,yychar,new TokenValue(yytext()));

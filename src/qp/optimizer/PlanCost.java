@@ -84,6 +84,8 @@ public class PlanCost {
             return getStatistics((GroupBy) node);
         } else if (node.getOpType() == OpType.INTERSECT) {
             return getStatistics((Intersect) node);
+        } else if (node.getOpType() == OpType.UNION) {
+            return getStatistics((Union) node);
         }
         System.out.println("operator is not supported");
         isFeasible = false;
@@ -99,7 +101,7 @@ public class PlanCost {
     }
 
     /**
-     * Calculate the statistics and cost of intersect operation 
+     * Calculate the statistics and cost of intersect operation
      */
     protected long getStatistics(Intersect node) {
         long lefttuples = calculateCost(node.getLeft());
@@ -128,6 +130,41 @@ public class PlanCost {
         long numbuff = BufferManager.getBuffersPerJoin();
         long outtuples = (long) Math.ceil(tuples);
         long joincost = (long)Math.ceil(leftpages/(numbuff -2)) * rightpages;
+        cost = cost + joincost;
+
+        return outtuples;
+    }
+
+    /**
+     * Calculate the statistics and cost of intersect operation
+     */
+    protected long getStatistics(Union node) {
+        long lefttuples = calculateCost(node.getLeft());
+        long righttuples = calculateCost(node.getRight());
+
+        if (!isFeasible) {
+            return 0;
+        }
+
+        Schema leftschema = node.getLeft().getSchema();
+        Schema rightschema = node.getRight().getSchema();
+
+        /** Get size of the tuple in output & correspondigly calculate
+         ** buffer capacity, i.e., number of tuples per page **/
+        long tuplesize = node.getSchema().getTupleSize();
+        long outcapacity = Math.max(1, Batch.getPageSize() / tuplesize);
+        long leftuplesize = leftschema.getTupleSize();
+        long leftcapacity = Math.max(1, Batch.getPageSize() / leftuplesize);
+        long righttuplesize = rightschema.getTupleSize();
+        long rightcapacity = Math.max(1, Batch.getPageSize() / righttuplesize);
+        long leftpages = (long) Math.ceil(((double) lefttuples) / (double) leftcapacity);
+        long rightpages = (long) Math.ceil(((double) righttuples) / (double) rightcapacity);
+
+        double tuples = (double) lefttuples * righttuples;
+
+        long numbuff = BufferManager.getBuffersPerJoin();
+        long outtuples = (long) Math.ceil(tuples);
+        long joincost = lefttuples + righttuples;
         cost = cost + joincost;
 
         return outtuples;
@@ -189,7 +226,7 @@ public class PlanCost {
             case JoinType.BLOCKNESTED:
                 joincost = (long)Math.ceil(leftpages/(numbuff -2)) * rightpages;
             case JoinType.SORTMERGE:
-                joincost =  Sort.calculateTotalIOCost((int) leftpages, (int) numbuff) 
+                joincost =  Sort.calculateTotalIOCost((int) leftpages, (int) numbuff)
                     + Sort.calculateTotalIOCost((int) rightpages, (int) numbuff)
                     + leftpages + rightpages;
                 break;
@@ -318,21 +355,36 @@ public class PlanCost {
     }
 
     private long getStatistics(Sort node) {
-        int numpages = node.getNumberOfPages();
-        int numbuff = BufferManager.getBuffersPerJoin();
-
-        cost += Sort.calculateTotalIOCost(numpages, numbuff);
-        return calculateCost(node.getBase());
+        return getExternalSortStatistics(node.getBase());
     }
 
+    /**
+     * Gets the I/O cost of running the DISTINCT operator.
+     */
     protected long getStatistics(Distinct node) {
-        // TODO: Actually calculate the I/O cost
-        return 1000;
+        return getExternalSortStatistics(node.getBase());
     }
 
+    /**
+     * Gets the I/O cost of running the GROUP BY operator.
+     */
     protected long getStatistics(GroupBy node) {
-        // TODO: Actually calculate the I/O cost
-        return 1000;
+        return getExternalSortStatistics(node.getBase());
+    }
+
+    /**
+     * Gets the I/O cost of performing external sort.
+     */
+    private long getExternalSortStatistics(Operator base) {
+        long numInput = calculateCost(base);
+        int tupleSize = base.getSchema().getTupleSize();
+        long tuplesPerPage = (long) Math.ceil((double) Batch.getPageSize() / (double) tupleSize);
+        long numPages = (long) Math.ceil((double) numInput / (double) tuplesPerPage);
+        int numBuffers = BufferManager.getNumberOfBuffers();
+        double ratio = (double) numPages / (double) numBuffers;
+        double logB1 = Math.log(Math.ceil(ratio)) / Math.log(numBuffers - 1);
+
+        return 2 * numInput * (1 + (long) Math.ceil(logB1));
     }
 
 }

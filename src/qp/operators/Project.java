@@ -102,18 +102,22 @@ public class Project extends Operator {
      * Read next tuple from operator
      */
     public Batch next() {
-        outbatch = new Batch(batchsize);
-
-        if(buffer.isEmpty()) {
-            genBlock();
-        }
-
-        if(end) {
+        if (end && buffer.isEmpty()) {
             return null;
         }
 
-        for (int i = 0; i < inbatch.size(); i++) {
+        outbatch = new Batch(batchsize);
 
+        if (buffer.isEmpty()) {
+            end = !genBlock();
+            if (buffer.isEmpty()) {
+                return null;
+            } else {
+                inbatch = buffer.peek();
+            }
+        }
+
+        for (int i = 0; i < inbatch.size(); i++) {
             Tuple basetuple = inbatch.get(i);
             //Debug.PPrint(basetuple);
             //System.out.println();
@@ -124,36 +128,33 @@ public class Project extends Operator {
             }
             Tuple outtuple = new Tuple(present);
             outbatch.add(outtuple);
-
         }
+
         buffer.poll();
         inbatch = buffer.peek();
         return outbatch;
     }
 
-    public void genBlock() {
+    public boolean genBlock() {
         int numOfInputBuffers = numOfBuffers - 1;
-
         inbatch = base.next();
 
-        if(inbatch == null) {
-            end = true;
-            return;
+        if (inbatch == null) {
+            return false; 
         }
+
         buffer.add(inbatch);
 
         Batch batch;
         for(int i = 1; i < numOfInputBuffers; i++) {
-
             batch = base.next();
             if(batch == null) {
                 end = true;
                 break;
             }
-
             buffer.add(batch);
         }
-
+        return true; 
     }
 
 

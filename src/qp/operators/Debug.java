@@ -4,6 +4,7 @@
 
 package qp.operators;
 
+import java.sql.Time;
 import qp.utils.*;
 
 public class Debug {
@@ -86,6 +87,12 @@ public class Debug {
             System.out.print("  with ");
             PPrint(((Intersect) node).getRight());
             System.out.print(")");
+        } else if (optype == OpType.UNION) {
+            System.out.print("Union(");
+            PPrint(((Union) node).getLeft());
+            System.out.print("  with ");
+            PPrint(((Union) node).getRight());
+            System.out.print(")");
         } else if (optype == OpType.JOIN) {
             int exprtype = ((Join) node).getJoinType();
             switch (exprtype) {
@@ -125,9 +132,19 @@ public class Debug {
             PPrint(((Project) node).getBase());
             System.out.print(")");
         } else if (optype == OpType.SORT) {
+            System.out.print("OrderBy(");
             PPrint(((Sort) node).getBase());
+            System.out.print(")");
         } else if (optype == OpType.SCAN) {
             System.out.print(((Scan) node).getTabName());
+        } else if (optype == OpType.DISTINCT) {
+            System.out.print("Distinct(");
+            PPrint(((Distinct) node).getBase());
+            System.out.print(")");
+        } else if (optype == OpType.GROUPBY) {
+            System.out.print("GroupBy(");
+            PPrint(((GroupBy) node).getBase());
+            System.out.print(")");
         }
     }
 
@@ -142,6 +159,8 @@ public class Debug {
                 System.out.print((Integer) data + "\t");
             } else if (data instanceof Float) {
                 System.out.print((Float) data + "\t");
+            } else if (data instanceof Time) {
+                System.out.print(((Time) data).getTime() + "\t");
             } else {
                 System.out.print(((String) data) + "\t");
             }
