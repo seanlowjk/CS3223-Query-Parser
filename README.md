@@ -16,10 +16,11 @@ The following modifications to the original template was made by the team:
 - The `DISTINCT` operator (qp.operators.Distinct)
 - The `ORDERBY` operator (qp.operators.Sort)
 - The `GROUPBY` operator (qp.operators.GroupBy)
+- The `PROJECT` operator (qp.operators.Project)
 
 As part of the bonus tasks, the team have made the following additional modifications:
 
-- The `INTERSECT` and `INTERSECT ALL` operator (qp.operators.Intersect)
+- The `INTERSECT`, `INTERSECT ALL`, `UNION `, `UNION ALL`  operator (qp.operators.Intersect)
 - The `TIME` datatype
 
 ## Experiment results
