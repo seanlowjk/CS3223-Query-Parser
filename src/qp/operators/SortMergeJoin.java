@@ -19,15 +19,16 @@ public class SortMergeJoin extends Join {
     int batchsize;                  // Number of tuples per out batch
     ArrayList<Integer> leftindex;   // Indices of the join attributes in left table
     ArrayList<Integer> rightindex;  // Indices of the join attributes in right table
+    ArrayList<Condition> condList;  // List of conditions in the order of join conditions
 
     String rfname;                  // The file name where the right table is materialized
-    
-    Batch outbatch;                 // Buffer page for output 
+
+    Batch outbatch;                 // Buffer page for output
     Batch leftbatch;                // Buffer block for left input stream
     Batch rightbatch;               // Buffer page for right input stream
     ObjectInputStream in;          // File pointer to the right hand materialized file
 
-    int lcurs;                      // Cursor for left side buffer 
+    int lcurs;                      // Cursor for left side buffer
     int rcurs;                      // Cursor for right side buffer
     boolean eosl;                   // Whether end of stream (left table) is reached
     boolean eosr;                   // Whether end of stream (right table) is reached
@@ -39,10 +40,10 @@ public class SortMergeJoin extends Join {
 
     int backtrackpointer;
     int backtrackcurs;
-    Tuple prevtuple; 
+    Tuple prevtuple;
 
     public SortMergeJoin(Join jn) {
-        super(jn.getLeft(), jn.getRight(),  
+        super(jn.getLeft(), jn.getRight(),
             jn.getConditionList(), jn.getOpType());
         schema = jn.getSchema();
         jointype = jn.getJoinType();
@@ -60,6 +61,7 @@ public class SortMergeJoin extends Join {
         ArrayList<Attribute> leftAttributes = new ArrayList<>();
         rightindex = new ArrayList<>();
         ArrayList<Attribute> rightAttributes = new ArrayList<>();
+        condList = new ArrayList<>();
         for (Condition con : conditionList) {
             Attribute leftattr = con.getLhs();
             Attribute rightattr = (Attribute) con.getRhs();
@@ -68,6 +70,7 @@ public class SortMergeJoin extends Join {
             leftAttributes.add(leftattr);
             rightindex.add(right.getSchema().indexOf(rightattr));
             rightAttributes.add(rightattr);
+            condList.add(con);
         }
 
         Sort leftSort = new Sort(left, leftAttributes, numBuff, false, OpType.SORT);
@@ -81,7 +84,7 @@ public class SortMergeJoin extends Join {
         Batch rightpage;
 
         /** initialize the cursors of input buffers **/
-        lcurs = 0; 
+        lcurs = 0;
         rcurs = 0;
         eosl = false;
         eosr = true;
@@ -90,7 +93,7 @@ public class SortMergeJoin extends Join {
         /** for traversing the right file for the algorithm */
         gotopointer = 0;
         newrcurs = 0;
-        tuplestoclear = 0; 
+        tuplestoclear = 0;
 
         /** for backtracking purposes */
         backtrackpointer = 0;
@@ -145,7 +148,7 @@ public class SortMergeJoin extends Join {
                     } else {
                         readNextLeftTuple();
                         if (lcurs >= leftbatch.size()) {
-                            lcurs = 0; 
+                            lcurs = 0;
                             continue;
                         }
                     }
@@ -174,7 +177,7 @@ public class SortMergeJoin extends Join {
                 if (rightbatch == null || rcurs >= rightbatch.size()) {
                     if (rightbatch != null) {
                         rcurs = 0;
-                        gotopointer += rightbatch.size(); 
+                        gotopointer += rightbatch.size();
                     }
                     rightbatch = (Batch) in.readObject();
                 }
@@ -182,9 +185,9 @@ public class SortMergeJoin extends Join {
                 while (rcurs < rightbatch.size()) {
                     Tuple lefttuple = leftbatch.get(lcurs);
                     Tuple righttuple = rightbatch.get(rcurs);
-                    if (lefttuple.checkJoin(righttuple, leftindex, rightindex)) {
-                        // Update the backtracker 
-                        if (prevtuple == null || !prevtuple.checkJoin(lefttuple, leftindex, leftindex)) {
+                    if (lefttuple.checkJoin(righttuple, leftindex, rightindex, condList)) {
+                        // Update the backtracker
+                        if (prevtuple == null || !prevtuple.checkJoin(lefttuple, leftindex, leftindex, condList)) {
                             prevtuple = lefttuple;
                             backtrackpointer = gotopointer;
                             backtrackcurs = rcurs;
@@ -234,11 +237,11 @@ public class SortMergeJoin extends Join {
             eosl = true;
             return false;
         }
-        tuplestoclear = leftbatch.size(); 
+        tuplestoclear = leftbatch.size();
 
-        // Confirm with the backtracker 
+        // Confirm with the backtracker
         Tuple nexttuple = leftbatch.get(lcurs);
-        if (prevtuple != null && nexttuple.checkJoin(prevtuple, leftindex, leftindex)) {
+        if (prevtuple != null && nexttuple.checkJoin(prevtuple, leftindex, leftindex, condList)) {
             try {
                 in.close();
             } catch (IOException io) {
@@ -246,7 +249,7 @@ public class SortMergeJoin extends Join {
             }
             resetRightFile();
         }
-        return true; 
+        return true;
     }
 
     private void readNextLeftTuple() {
@@ -255,11 +258,11 @@ public class SortMergeJoin extends Join {
 
         if (tuplestoclear == 0) {
             return;
-        } 
+        }
 
-        // Confirm with the backtracker 
+        // Confirm with the backtracker
         Tuple nexttuple = leftbatch.get(lcurs);
-        if (prevtuple != null && nexttuple.checkJoin(prevtuple, leftindex, leftindex)) {
+        if (prevtuple != null && nexttuple.checkJoin(prevtuple, leftindex, leftindex, condList)) {
             try {
                 in.close();
             } catch (IOException io) {
@@ -270,7 +273,7 @@ public class SortMergeJoin extends Join {
     }
 
     private void resetRightFile() {
-        // args[0] and args[1] return you the pointer you are supposed to backtrack to. 
+        // args[0] and args[1] return you the pointer you are supposed to backtrack to.
         gotopointer = backtrackpointer + backtrackcurs;
         try {
             in = new ObjectInputStream(new FileInputStream(rfname));
