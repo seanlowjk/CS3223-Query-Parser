@@ -42,19 +42,14 @@ public class SortMergeJoin extends Join {
     boolean eosl;                   // Whether end of stream (left table) is reached
     boolean eosr;                   // Whether end of stream (right table) is reached
     boolean eosb;                   // Whether end of stream (backtracking) is reached 
-
-    boolean sosb;                   // Signifies start of reading from stream (backtracking)
     boolean sosl;                   // Signifies start of reading from stream (left table)
 
     int gotopointer;                // Find the minimum pointer for the right table
     int newrcurs;                   // New right cursor for backtracking
     int tuplestoclear;              // Number of tuples to clear in the incoming left batch
 
-    int backtrackpointer;
-    int backtrackcurs;
-    Tuple prevtuple;
-
-    boolean isBacktracking; 
+    Tuple prevtuple;                // To check if backtracking is needed
+    boolean isBacktracking;         // To check for the need of backtracking 
 
     public SortMergeJoin(Join jn) {
         super(jn.getLeft(), jn.getRight(),
@@ -103,7 +98,6 @@ public class SortMergeJoin extends Join {
         eosl = false;
         eosr = true;
 
-        sosb = false; 
         sosl = false;
 
         /** for traversing the right file for the algorithm */
@@ -155,7 +149,7 @@ public class SortMergeJoin extends Join {
                 }
             }
 
-            if (isBacktracking && sosb) {
+            if (isBacktracking) {
                 if (eosb) {
                     try {
                         bin = new ObjectInputStream(new FileInputStream(bfname));
@@ -243,7 +237,6 @@ public class SortMergeJoin extends Join {
                     } else {
                         isBacktracking = false;
                         eosb = true;
-                        sosb = false; 
                         return;
                     }
                 }
@@ -310,7 +303,6 @@ public class SortMergeJoin extends Join {
                                 outbackbatch = new Batch(batchsize);
                                 bout.close(); 
                                 eosb = true; 
-                                sosb = true;
                                 return; 
                             } else {
                                 readNextLeftTuple();
