@@ -28,33 +28,106 @@ public class Tuple implements Serializable {
 
     public Object dataAt(int index) {
         return _data.get(index);
-    }
-
-    /**
-     * Checks whether the join condition is satisfied or not with one condition
-     * * before performing actual join operation
-     **/
-    public boolean checkJoin(Tuple right, int leftindex, int rightindex) {
-        Object leftData = dataAt(leftindex);
-        Object rightData = right.dataAt(rightindex);
-        if (leftData.equals(rightData))
-            return true;
-        else
-            return false;
-    }
+}
 
     /**
      * Checks whether the join condition is satisfied or not with multiple conditions
      * * before performing actual join operation
      **/
-    public boolean checkJoin(Tuple right, ArrayList<Integer> leftindex, ArrayList<Integer> rightindex) {
-        if (leftindex.size() != rightindex.size())
+    public boolean checkJoin(Tuple right, ArrayList<Integer> leftindex, ArrayList<Integer> rightindex, ArrayList<Condition> condList) {
+        if (leftindex.size() != rightindex.size() && leftindex.size() != condList.size() && rightindex.size() != condList.size())
             return false;
         for (int i = 0; i < leftindex.size(); ++i) {
             Object leftData = dataAt(leftindex.get(i));
             Object rightData = right.dataAt(rightindex.get(i));
-            if (!leftData.equals(rightData)) {
-                return false;
+            int exprtype = condList.get(i).getExprType();
+
+            if (exprtype == Condition.LESSTHAN) {
+                if (leftData instanceof Integer) {
+                    return (((Integer) leftData).compareTo((Integer) rightData) < 0);
+                } else if (leftData instanceof String) {
+                    return (((String) leftData).compareTo((String) rightData) < 0);
+                } else if (leftData instanceof Float) {
+                    return (((Float) leftData).compareTo((Float) rightData) < 0);
+                } else if (leftData instanceof Time)  {
+                    return (((Time) leftData).compareTo((Time) rightData) < 0);
+                } else {
+                    System.out.println("Tuple: Unknown comparision of the tuples");
+                    System.exit(1);
+                    return false;
+                }
+            } else if (exprtype == Condition.GREATERTHAN) {
+                if (leftData instanceof Integer) {
+                    return (((Integer) leftData).compareTo((Integer) rightData) > 0);
+                } else if (leftData instanceof String) {
+                    return (((String) leftData).compareTo((String) rightData) > 0);
+                } else if (leftData instanceof Float) {
+                    return (((Float) leftData).compareTo((Float) rightData) > 0);
+                } else if (leftData instanceof Time)  {
+                    return (((Time) leftData).compareTo((Time) rightData) > 0);
+                } else {
+                    System.out.println("Tuple: Unknown comparision of the tuples");
+                    System.exit(1);
+                    return false;
+                }
+            } else if (exprtype == Condition.LTOE) {
+                if (leftData instanceof Integer) {
+                    return (((Integer) leftData).compareTo((Integer) rightData) <= 0);
+                } else if (leftData instanceof String) {
+                    return (((String) leftData).compareTo((String) rightData) <= 0);
+                } else if (leftData instanceof Float) {
+                    return (((Float) leftData).compareTo((Float) rightData) <= 0);
+                } else if (leftData instanceof Time)  {
+                    return (((Time) leftData).compareTo((Time) rightData) <= 0);
+                } else {
+                    System.out.println("Tuple: Unknown comparision of the tuples");
+                    System.exit(1);
+                    return false;
+                }
+            } else if (exprtype == Condition.GTOE) {
+                if (leftData instanceof Integer) {
+                    return (((Integer) leftData).compareTo((Integer) rightData) >= 0);
+                } else if (leftData instanceof String) {
+                    return (((String) leftData).compareTo((String) rightData) >= 0);
+                } else if (leftData instanceof Float) {
+                    return (((Float) leftData).compareTo((Float) rightData) >= 0);
+                } else if (leftData instanceof Time)  {
+                    return (((Time) leftData).compareTo((Time) rightData) >= 0);
+                } else {
+                    System.out.println("Tuple: Unknown comparision of the tuples");
+                    System.exit(1);
+                    return false;
+                }
+            } else if (exprtype == Condition.EQUAL) {
+                if (leftData instanceof Integer) {
+                    return (((Integer) leftData).compareTo((Integer) rightData) == 0);
+                } else if (leftData instanceof String) {
+                    return (((String) leftData).compareTo((String) rightData) == 0);
+                } else if (leftData instanceof Float) {
+                    return (((Float) leftData).compareTo((Float) rightData) == 0);
+                } else if (leftData instanceof Time)  {
+                    return (((Time) leftData).compareTo((Time) rightData) == 0);
+                } else {
+                    System.out.println("Tuple: Unknown comparision of the tuples");
+                    System.exit(1);
+                    return false;
+                }
+            } else if (exprtype == Condition.NOTEQUAL) {
+                if (leftData instanceof Integer) {
+                    return (((Integer) leftData).compareTo((Integer) rightData) != 0);
+                } else if (leftData instanceof String) {
+                    return (((String) leftData).compareTo((String) rightData) != 0);
+                } else if (leftData instanceof Float) {
+                    return (((Float) leftData).compareTo((Float) rightData) != 0);
+                } else if (leftData instanceof Time)  {
+                    return (((Time) leftData).compareTo((Time) rightData) != 0);
+                } else {
+                    System.out.println("Tuple: Unknown comparision of the tuples");
+                    System.exit(1);
+                    return false;
+                }
+            } else {
+                System.out.println("Tuple: Incorrect condition operator");
             }
         }
         return true;

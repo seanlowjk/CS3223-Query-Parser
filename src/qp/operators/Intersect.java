@@ -107,7 +107,7 @@ public class Intersect extends SetOperator {
                 // need new left page
                 if (leftBlock.isEmpty()) {
                     /** new left page is to be fetched**/
-                    leftBlock = generateLeftBuffer(); 
+                    leftBlock = generateLeftBuffer();
                     if (leftBlock.isEmpty()) {
                         eosl = true;
                         if (outbatch.isEmpty()) {
@@ -152,24 +152,24 @@ public class Intersect extends SetOperator {
                     Tuple leftTuple = leftBlock.peek();
                     for (int i = rcurs; i < rightbatch.size(); i++) {
                         Tuple rightTuple = rightbatch.get(i);
-                        if (leftTuple.checkJoin(rightTuple, leftindex, leftindex)) {
+                        if (Tuple.compareTuples(leftTuple, rightTuple, leftindex, leftindex) == 0) {
                             outbatch.add(leftTuple);
                             if (outbatch.isFull()) {
-                                rcurs = i; 
+                                rcurs = i;
                                 if (!leftBlock.isEmpty() && rcurs != rightbatch.size() - 1) {
                                     rcurs++;
                                 } else if (!leftBlock.isEmpty() && rcurs == rightbatch.size() - 1) {
                                     rightbatch = (Batch) in.readObject();
                                     rcurs = 0;
                                 } else if (leftBlock.isEmpty() && rcurs != rightbatch.size() - 1) {
-                                    // Do Nothing here. 
-                                } else { // if (leftBlock.isEmpty() && rcurs == rightbatch.size() - 1) 
+                                    // Do Nothing here.
+                                } else { // if (leftBlock.isEmpty() && rcurs == rightbatch.size() - 1)
                                     rightbatch = (Batch) in.readObject();
                                     rcurs = 0;
                                 }
                                 break;
                             }
-                        } 
+                        }
                     }
                     rightbatch = (Batch) in.readObject();
                     rcurs = 0;
@@ -181,7 +181,7 @@ public class Intersect extends SetOperator {
             } catch (IOException io) {
                 System.out.println("Intersect: Error in reading temporary file");
             }
-            leftBlock.poll(); 
+            leftBlock.poll();
             eosr = true;
         } catch (ClassNotFoundException c) {
             System.out.println("Intersect: Error in deserialising temporary file ");
@@ -212,7 +212,7 @@ public class Intersect extends SetOperator {
             }
         }
 
-        return leftBuffer; 
+        return leftBuffer;
     }
 
     /**

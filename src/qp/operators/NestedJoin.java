@@ -18,6 +18,7 @@ public class NestedJoin extends Join {
     int batchsize;                  // Number of tuples per out batch
     ArrayList<Integer> leftindex;   // Indices of the join attributes in left table
     ArrayList<Integer> rightindex;  // Indices of the join attributes in right table
+    ArrayList<Condition> condList;  // List of conditions in the order of join conditions
     String rfname;                  // The file name where the right table is materialized
     Batch outbatch;                 // Buffer page for output
     Batch leftbatch;                // Buffer page for left input stream
@@ -49,11 +50,13 @@ public class NestedJoin extends Join {
         /** find indices attributes of join conditions **/
         leftindex = new ArrayList<>();
         rightindex = new ArrayList<>();
+        condList = new ArrayList<>();
         for (Condition con : conditionList) {
             Attribute leftattr = con.getLhs();
             Attribute rightattr = (Attribute) con.getRhs();
             leftindex.add(left.getSchema().indexOf(leftattr));
             rightindex.add(right.getSchema().indexOf(rightattr));
+            condList.add(con);
         }
         Batch rightpage;
 
@@ -136,7 +139,7 @@ public class NestedJoin extends Join {
                         for (j = rcurs; j < rightbatch.size(); ++j) {
                             Tuple lefttuple = leftbatch.get(i);
                             Tuple righttuple = rightbatch.get(j);
-                            if (lefttuple.checkJoin(righttuple, leftindex, rightindex)) {
+                            if (lefttuple.checkJoin(righttuple, leftindex, rightindex, condList)) {
                                 Tuple outtuple = lefttuple.joinWith(righttuple);
                                 outbatch.add(outtuple);
                                 if (outbatch.isFull()) {
