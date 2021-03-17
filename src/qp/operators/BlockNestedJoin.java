@@ -16,6 +16,10 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
 
+
+/**
+ * The type Block nested join.
+ */
 public class BlockNestedJoin extends Join {
 
     static int filenum = 0;         // To get unique filenum for this operation
@@ -27,11 +31,15 @@ public class BlockNestedJoin extends Join {
     Queue<Tuple> leftBlock;         // Buffer block for left input stream
     Batch rightbatch;               // Buffer page for right input stream
     ObjectInputStream in;           // File pointer to the right hand materialized file
-
     int rcurs;                      // Cursor for right side buffer
     boolean eosl;                   // Whether end of stream (left table) is reached
     boolean eosr;                   // Whether end of stream (right table) is reached
 
+    /**
+     * Instantiates a new Block nested join.
+     *
+     * @param jn the jn
+     */
     public BlockNestedJoin(Join jn) {
         super(jn.getLeft(), jn.getRight(), jn.getConditionList(), jn.getOpType());
         schema = jn.getSchema();
@@ -40,10 +48,9 @@ public class BlockNestedJoin extends Join {
     }
 
     /**
-     * During open finds the index of the join attributes
-     * * Materializes the right hand side into a file
-     * * Opens the connections
-     **/
+     *
+     * @return
+     */
     @Override
     public boolean open() {
         /** select number of tuples per batch/page **/
@@ -101,6 +108,10 @@ public class BlockNestedJoin extends Join {
         return left.open();
     }
 
+    /**
+     *
+     * @return
+     */
     @Override
     public Batch next() {
         outbatch = new Batch(batchsize);
@@ -149,6 +160,10 @@ public class BlockNestedJoin extends Join {
         return outbatch;
     }
 
+
+    /**
+     * Gets join batch.
+     */
     public void getJoinBatch() {
         try {
             while (!eosr) {
@@ -159,7 +174,7 @@ public class BlockNestedJoin extends Join {
                     Tuple leftTuple = leftBlock.peek();
                     for (int i = rcurs; i < rightbatch.size(); i++) {
                         Tuple rightTuple = rightbatch.get(i);
-                        if (leftTuple.checkJoin(rightTuple, leftindex, rightindex)) {
+                        if (leftTuple.checkJoin(rightTuple, leftindex, rightindex, conditionList)) {
                             Tuple joinedTuple = leftTuple.joinWith(rightTuple);
                             outbatch.add(joinedTuple);
                             if (outbatch.isFull()) {
@@ -201,6 +216,12 @@ public class BlockNestedJoin extends Join {
 
     }
 
+    /**
+     * Generate left buffer queue.
+     *
+     * @return the queue
+     * @throws Exception the exception
+     */
     public Queue<Tuple> generateLeftBuffer() throws Exception {
 
         if(left instanceof Scan) {
@@ -229,7 +250,8 @@ public class BlockNestedJoin extends Join {
     }
 
     /**
-     * Close the operator
+     *
+     * @return
      */
     public boolean close() {
         File f = new File(rfname);

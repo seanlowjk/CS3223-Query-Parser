@@ -4,12 +4,6 @@
  */
 package qp.operators;
 
-import java.io.File;
-import java.io.ObjectInputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 import qp.optimizer.BufferManager;
 import qp.utils.Attribute;
 import qp.utils.AttributeDirection;
@@ -19,6 +13,15 @@ import qp.utils.Schema;
 import qp.utils.Tuple;
 import qp.utils.TupleComparator;
 
+import java.io.File;
+import java.io.ObjectInputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+/**
+ * The type Distinct.
+ */
 public class Distinct extends Operator {
     // The base table to project
     private Operator base;
@@ -39,7 +42,8 @@ public class Distinct extends Operator {
 
     /**
      * Creates a new DISTINCT operator.
-     * @param base The base operator.
+     *
+     * @param base     The base operator.
      * @param attrList The list of attributes to project on.
      */
     public Distinct(Operator base, ArrayList<Attribute> attrList) {
@@ -59,14 +63,29 @@ public class Distinct extends Operator {
         }
     }
 
+    /**
+     * Gets base.
+     *
+     * @return the base
+     */
     public Operator getBase() {
         return this.base;
     }
 
+    /**
+     * Sets base.
+     *
+     * @param base the base
+     */
     public void setBase(Operator base) {
         this.base = base;
     }
 
+    /**
+     * Gets proj attr.
+     *
+     * @return the proj attr
+     */
     public ArrayList<Attribute> getProjAttr() {
         return this.attrList;
     }

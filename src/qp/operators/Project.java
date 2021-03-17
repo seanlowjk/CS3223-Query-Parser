@@ -14,6 +14,9 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
 
+/**
+ * The type Project.
+ */
 public class Project extends Operator {
 
     Operator base;                 // Base table to project
@@ -24,24 +27,30 @@ public class Project extends Operator {
     /**
      * The following fields are requied during execution
      * * of the Project Operator
-     **/
+     */
     Batch inbatch; //pts to the first batch in block
     Batch outbatch;
-
-    /**
-     * Buffering
-     */
     Queue<Batch> buffer;
 
     /**
      * index of the attributes in the base operator
      * * that are to be projected
-     **/
+     */
     int[] attrIndex;
 
+    /**
+     * The Index in batch.
+     */
     int indexInBatch;
     boolean end;
 
+    /**
+     * Instantiates a new Project.
+     *
+     * @param base the base
+     * @param as   the as
+     * @param type the type
+     */
     public Project(Operator base, ArrayList<Attribute> as, int type) {
         super(type);
         this.base = base;
@@ -49,14 +58,29 @@ public class Project extends Operator {
         this.numOfBuffers = BufferManager.getNumberOfBuffers();
     }
 
+    /**
+     * Gets base.
+     *
+     * @return the base
+     */
     public Operator getBase() {
         return base;
     }
 
+    /**
+     * Sets base.
+     *
+     * @param base the base
+     */
     public void setBase(Operator base) {
         this.base = base;
     }
 
+    /**
+     * Gets proj attr.
+     *
+     * @return the proj attr
+     */
     public ArrayList<Attribute> getProjAttr() {
         return attrset;
     }
@@ -135,6 +159,11 @@ public class Project extends Operator {
         return outbatch;
     }
 
+    /**
+     * Gen block boolean.
+     *
+     * @return the boolean
+     */
     public boolean genBlock() {
         int numOfInputBuffers = numOfBuffers - 1;
         inbatch = base.next();
@@ -167,6 +196,10 @@ public class Project extends Operator {
         return true;
     }
 
+    /**
+     *
+     * @return
+     */
     public Object clone() {
         Operator newbase = (Operator) base.clone();
         ArrayList<Attribute> newattr = new ArrayList<>();

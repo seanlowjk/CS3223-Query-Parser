@@ -5,16 +5,23 @@
 package qp.operators;
 
 import qp.optimizer.BufferManager;
-import qp.utils.Attribute;
 import qp.utils.Batch;
 import qp.utils.Tuple;
 
-import java.io.*;
-import java.util.ArrayList;
+import java.io.EOFException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
 
+/**
+ * The type Intersect.
+ */
 public class Intersect extends SetOperator {
 
     static int filenum = 0;         // To get unique filenum for this operation
@@ -30,6 +37,13 @@ public class Intersect extends SetOperator {
     boolean eosl;                   // Whether end of stream (left table) is reached
     boolean eosr;                   // Whether end of stream (right table) is reached
 
+    /**
+     * Instantiates a new Intersect.
+     *
+     * @param left   the left
+     * @param right  the right
+     * @param opType the op type
+     */
     public Intersect(Operator left, Operator right, int opType) {
         super(left, right, opType);
         schema = left.getSchema();
@@ -94,6 +108,10 @@ public class Intersect extends SetOperator {
         return left.open();
     }
 
+    /**
+     *
+     * @return
+     */
     @Override
     public Batch next() {
         outbatch = new Batch(batchsize);
@@ -107,7 +125,7 @@ public class Intersect extends SetOperator {
                 // need new left page
                 if (leftBlock.isEmpty()) {
                     /** new left page is to be fetched**/
-                    leftBlock = generateLeftBuffer(); 
+                    leftBlock = generateLeftBuffer();
                     if (leftBlock.isEmpty()) {
                         eosl = true;
                         if (outbatch.isEmpty()) {
@@ -142,6 +160,9 @@ public class Intersect extends SetOperator {
         return outbatch;
     }
 
+    /**
+     * Gets set batch.
+     */
     public void getSetBatch() {
         try {
             while (!eosr) {
@@ -152,24 +173,24 @@ public class Intersect extends SetOperator {
                     Tuple leftTuple = leftBlock.peek();
                     for (int i = rcurs; i < rightbatch.size(); i++) {
                         Tuple rightTuple = rightbatch.get(i);
-                        if (leftTuple.checkJoin(rightTuple, leftindex, leftindex)) {
+                        if (Tuple.compareTuples(leftTuple, rightTuple, leftindex, leftindex) == 0) {
                             outbatch.add(leftTuple);
                             if (outbatch.isFull()) {
-                                rcurs = i; 
+                                rcurs = i;
                                 if (!leftBlock.isEmpty() && rcurs != rightbatch.size() - 1) {
                                     rcurs++;
                                 } else if (!leftBlock.isEmpty() && rcurs == rightbatch.size() - 1) {
                                     rightbatch = (Batch) in.readObject();
                                     rcurs = 0;
                                 } else if (leftBlock.isEmpty() && rcurs != rightbatch.size() - 1) {
-                                    // Do Nothing here. 
-                                } else { // if (leftBlock.isEmpty() && rcurs == rightbatch.size() - 1) 
+                                    // Do Nothing here.
+                                } else { // if (leftBlock.isEmpty() && rcurs == rightbatch.size() - 1)
                                     rightbatch = (Batch) in.readObject();
                                     rcurs = 0;
                                 }
                                 break;
                             }
-                        } 
+                        }
                     }
                     rightbatch = (Batch) in.readObject();
                     rcurs = 0;
@@ -181,7 +202,7 @@ public class Intersect extends SetOperator {
             } catch (IOException io) {
                 System.out.println("Intersect: Error in reading temporary file");
             }
-            leftBlock.poll(); 
+            leftBlock.poll();
             eosr = true;
         } catch (ClassNotFoundException c) {
             System.out.println("Intersect: Error in deserialising temporary file ");
@@ -193,6 +214,12 @@ public class Intersect extends SetOperator {
 
     }
 
+    /**
+     * Generate left buffer queue.
+     *
+     * @return the queue
+     * @throws Exception the exception
+     */
     public Queue<Tuple> generateLeftBuffer() throws Exception {
         int numAvailableBuffers = numBuff - 2;
         Queue<Tuple> leftBuffer = new LinkedList<Tuple>();
@@ -212,7 +239,7 @@ public class Intersect extends SetOperator {
             }
         }
 
-        return leftBuffer; 
+        return leftBuffer;
     }
 
     /**
@@ -224,6 +251,10 @@ public class Intersect extends SetOperator {
         return left.close() && right.close();
     }
 
+    /**
+     *
+     * @return
+     */
     @Override
     public Object clone() {
         Operator newleft = (Operator) left.clone();
