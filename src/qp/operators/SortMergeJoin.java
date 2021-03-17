@@ -153,7 +153,6 @@ public class SortMergeJoin extends Join {
             }
 
             if (isBacktracking && sosb) {
-                System.out.printf("%b\n", eosb);
                 if (eosb) {
                     try {
                         bin = new ObjectInputStream(new FileInputStream(bfname));
@@ -358,7 +357,6 @@ public class SortMergeJoin extends Join {
 
     private void initBacktrackingFile() {
         bfname = "B-SMJtemp-" + String.valueOf(filenum);
-        System.out.println(bfname);
         try {
             bout = new ObjectOutputStream(new FileOutputStream(bfname));
             isBacktracking = true; 
