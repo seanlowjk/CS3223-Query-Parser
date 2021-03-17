@@ -24,6 +24,8 @@ public class SortMergeJoin extends Join {
     String bfname;                  // The file name where backtracking table is materialized 
     
     Batch outbatch;                 // Buffer page for output 
+    Batch outbackbatch;             // Buffer page for backtracking batch 
+
     Batch leftbatch;                // Buffer block for left input stream
     Batch rightbatch;               // Buffer page for right input stream
     Batch backbatch;                // Buffer page for backtrack input stream
@@ -39,6 +41,8 @@ public class SortMergeJoin extends Join {
     boolean eosl;                   // Whether end of stream (left table) is reached
     boolean eosr;                   // Whether end of stream (right table) is reached
     boolean eosb;                   // Whether end of stream (backtracking) is reached 
+
+    boolean sosb;                   // Signifies start of reading from stream (backtracking)
     boolean sosl;                   // Signifies start of reading from stream (left table)
 
     int gotopointer;                // Find the minimum pointer for the right table
@@ -95,7 +99,9 @@ public class SortMergeJoin extends Join {
         rcurs = 0;
         eosl = false;
         eosr = true;
-        sosl = true;
+
+        sosb = false; 
+        sosl = false;
 
         /** for traversing the right file for the algorithm */
         gotopointer = 0;
@@ -146,10 +152,12 @@ public class SortMergeJoin extends Join {
                 }
             }
 
-            if (isBacktracking) {
+            if (isBacktracking && sosb) {
+                System.out.printf("%b\n", eosb);
                 if (eosb) {
                     try {
                         bin = new ObjectInputStream(new FileInputStream(bfname));
+                        System.out.println(bin);
                         eosb = false;
                     } catch (IOException io) {
                         System.err.println("SortMergeJoin: Error in reading the backtracking file");
@@ -158,8 +166,8 @@ public class SortMergeJoin extends Join {
 
                     if (eosl) {
                         return outbatch;
-                    } else if (sosl) {
-                        sosl = false;
+                    } else if (!sosl) {
+                        sosl = true;
                     } else {
                         readNextLeftTuple();
                         if (lcurs >= leftbatch.size()) {
@@ -186,8 +194,8 @@ public class SortMergeJoin extends Join {
 
                 if (eosl) {
                     return outbatch;
-                } else if (sosl) {
-                    sosl = false;
+                } else if (!sosl) {
+                    sosl = true;
                 } else {
                     readNextLeftTuple();
                     if (lcurs >= leftbatch.size()) {
@@ -232,6 +240,8 @@ public class SortMergeJoin extends Join {
                     } else {
                         readNextLeftTuple();
                         isBacktracking = false;
+                        eosb = true;
+                        sosb = false; 
                         return;
                     }
                 }
@@ -274,9 +284,15 @@ public class SortMergeJoin extends Join {
                         // If there is a condition to backtrack, initialize the backtracking file 
                         if (prevtuple == null || !prevtuple.checkJoin(lefttuple, leftindex, leftindex)) {
                             prevtuple = lefttuple;
+                            outbackbatch = new Batch(batchsize);
                             initBacktrackingFile();
+                        } 
+                        outbackbatch.add(righttuple);
+
+                        if (outbackbatch.isFull()) {
+                            bout.writeObject(outbackbatch);
+                            outbackbatch = new Batch(batchsize);
                         }
-                        bout.writeObject(righttuple);
 
                         if (outbatch.isFull()) {
                             return;
@@ -289,6 +305,8 @@ public class SortMergeJoin extends Join {
                             readNextLeftTuple();
                             if (isBacktracking) {
                                 bout.close(); 
+                                eosb = true; 
+                                sosb = true;
                                 return; 
                             }
 
@@ -340,6 +358,7 @@ public class SortMergeJoin extends Join {
 
     private void initBacktrackingFile() {
         bfname = "B-SMJtemp-" + String.valueOf(filenum);
+        System.out.println(bfname);
         try {
             bout = new ObjectOutputStream(new FileOutputStream(bfname));
             isBacktracking = true; 
