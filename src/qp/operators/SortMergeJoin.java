@@ -299,7 +299,6 @@ public class SortMergeJoin extends Join {
                             if (isBacktracking) {
                                 bout.writeObject(outbackbatch);
                                 outbackbatch = new Batch(batchsize);
-                                bout.close(); 
                                 eosb = true; 
                                 return; 
                             } else {
