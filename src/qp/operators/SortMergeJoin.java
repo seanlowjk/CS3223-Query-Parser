@@ -106,8 +106,6 @@ public class SortMergeJoin extends Join {
         tuplestoclear = 0;
 
         /** for backtracking purposes */
-        backtrackpointer = 0;
-        backtrackcurs = 0;
         prevtuple = null;
         isBacktracking = false; 
 
