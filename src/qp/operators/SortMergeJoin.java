@@ -147,7 +147,6 @@ public class SortMergeJoin extends Join {
                     if (sosl) {
                         sosl = false;
                     } else {
-                        readNextLeftTuple();
                         if (lcurs >= leftbatch.size()) {
                             lcurs = 0;
                             continue;
@@ -156,6 +155,7 @@ public class SortMergeJoin extends Join {
                 }
                 getBacktrackBatch();
                 if (lcurs >= leftbatch.size()) {
+                    System.out.println("?");
                     lcurs = 0;
                 }
             } else {
@@ -195,6 +195,9 @@ public class SortMergeJoin extends Join {
         while (backtrackcurs < backbatch.size()) {
             Tuple lefttuple = leftbatch.get(lcurs);
             Tuple righttuple = backbatch.get(backtrackcurs);
+            if (lefttuple._data.get(0).equals(11378)) {
+                System.out.println(lefttuple._data + " X " + righttuple._data + " X "  + backbatch.get(backtrackcurs)._data);
+            }   
             if (lefttuple.checkJoin(righttuple, leftindex, rightindex, condList)) {
                 Tuple outtuple = lefttuple.joinWith(righttuple);
                 outbatch.add(outtuple);
@@ -203,12 +206,12 @@ public class SortMergeJoin extends Join {
                     return;
                 }
             } else {
-                int comparisonfactor = Tuple.compareTuples(lefttuple, righttuple, leftindex, rightindex);
-                readNextLeftTuple();
                 isBacktracking = false;
                 return;
             }
         }
+        readNextLeftTuple();
+        backtrackcurs = 0;
     }
 
     private void getJoinBatch() {
@@ -227,15 +230,14 @@ public class SortMergeJoin extends Join {
                     Tuple righttuple = rightbatch.get(rcurs);
                     if (lefttuple.checkJoin(righttuple, leftindex, rightindex, condList)) {
                         // Update the backtracker
-                        if (prevtuple == null || !prevtuple.checkJoin(lefttuple, leftindex, leftindex, condList)) {
-                            prevtuple = lefttuple;
-                            isBacktracking = true;
-                            backbatch = new ArrayList<>();
-                        }
-
                         if (isBacktracking) {
                             backbatch.add(righttuple);
+                        } else {
+                            backtrackcurs = -1;
+                            backbatch = new ArrayList<>();
+                            backbatch.add(righttuple);
                         }
+                        isBacktracking = true;
 
                         Tuple outtuple = lefttuple.joinWith(righttuple);
                         outbatch.add(outtuple);
