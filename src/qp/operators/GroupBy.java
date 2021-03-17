@@ -19,6 +19,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * The type Group by.
+ */
 public class GroupBy extends Operator {
     // The base table to project
     private Operator base;
@@ -37,7 +40,8 @@ public class GroupBy extends Operator {
 
     /**
      * Creates a new GROUP BY operator.
-     * @param base The base operator.
+     *
+     * @param base     The base operator.
      * @param attrList The list of attributes to group on.
      */
     public GroupBy(Operator base, ArrayList<Attribute> attrList) {
@@ -50,18 +54,40 @@ public class GroupBy extends Operator {
         schema = base.getSchema();
     }
 
+    /**
+     * Gets base.
+     *
+     * @return the base
+     */
     public Operator getBase() {
         return this.base;
     }
 
+    /**
+     * Sets base.
+     *
+     * @param base the base
+     */
     public void setBase(Operator base) {
         this.base = base;
     }
 
+    /**
+     * Gets proj attr.
+     *
+     * @return the proj attr
+     */
     public ArrayList<Attribute> getProjAttr() {
         return this.attrList;
     }
 
+    /**
+     * Compare int.
+     *
+     * @param left  the left
+     * @param right the right
+     * @return the int
+     */
     public int compare(Tuple left, Tuple right) {
         return comparator.compare(left, right);
     }
@@ -116,6 +142,10 @@ public class GroupBy extends Operator {
         return base.close();
     }
 
+    /**
+     *
+     * @return
+     */
     @Override
     public Object clone() {
         Operator newBase = (Operator) base.clone();

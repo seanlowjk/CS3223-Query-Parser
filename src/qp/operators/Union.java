@@ -5,16 +5,12 @@
 package qp.operators;
 
 import qp.optimizer.BufferManager;
-import qp.utils.Attribute;
 import qp.utils.Batch;
-import qp.utils.Tuple;
 
-import java.io.*;
-import java.util.ArrayList;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.Queue;
 
+/**
+ * The type Union.
+ */
 public class Union extends SetOperator {
     int batchsize;                  // Number of tuples per out batch
     Batch outbatch;                 // Buffer page for output
@@ -22,6 +18,13 @@ public class Union extends SetOperator {
     boolean eosl;                   // Whether end of stream (left table) is reached
     boolean eosr;                   // Whether end of stream (right table) is reached
 
+    /**
+     * Instantiates a new Union.
+     *
+     * @param left   the left
+     * @param right  the right
+     * @param opType the op type
+     */
     public Union(Operator left, Operator right, int opType) {
         super(left, right, opType);
         schema = left.getSchema();
@@ -46,6 +49,10 @@ public class Union extends SetOperator {
         return left.open() && right.open();
     }
 
+    /**
+     *
+     * @return
+     */
     @Override
     public Batch next() {
         outbatch = new Batch(batchsize);
@@ -82,6 +89,10 @@ public class Union extends SetOperator {
         return left.close() && right.close();
     }
 
+    /**
+     *
+     * @return
+     */
     @Override
     public Object clone() {
         Operator newleft = (Operator) left.clone();

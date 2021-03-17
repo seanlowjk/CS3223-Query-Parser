@@ -13,9 +13,10 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.Queue;
 
+/**
+ * The type Block nested join.
+ */
 public class BlockNestedJoin extends Join {
 
     static int filenum = 0;         // To get unique filenum for this operation
@@ -36,6 +37,11 @@ public class BlockNestedJoin extends Join {
     boolean eosl;                   // Whether end of stream (left table) is reached
     boolean eosr;                   // Whether end of stream (right table) is reached
 
+    /**
+     * Instantiates a new Block nested join.
+     *
+     * @param jn the jn
+     */
     public BlockNestedJoin(Join jn) {
         super(jn.getLeft(), jn.getRight(), jn.getConditionList(), jn.getOpType());
         schema = jn.getSchema();
@@ -205,6 +211,12 @@ public class BlockNestedJoin extends Join {
         return outbatch;
     }
 
+    /**
+     * Generate left buffer array list.
+     *
+     * @return the array list
+     * @throws Exception the exception
+     */
     public ArrayList<Batch> generateLeftBuffer() throws Exception {
         int numAvailableBuffers = numBuff - 2;
         ArrayList<Batch> leftBuffer = new ArrayList<>();

@@ -14,6 +14,9 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 
+/**
+ * The type Sort merge join.
+ */
 public class SortMergeJoin extends Join {
     static int filenum = 0;         // To get unique filenum for this operation
     int batchsize;                  // Number of tuples per out batch
@@ -22,26 +25,26 @@ public class SortMergeJoin extends Join {
     ArrayList<Condition> condList;  // List of conditions in the order of join conditions
 
     String rfname;                  // The file name where the right table is materialized
-    String bfname;                  // The file name where backtracking table is materialized 
-    
-    Batch outbatch;                 // Buffer page for output 
-    Batch outbackbatch;             // Buffer page for backtracking batch 
+    String bfname;                  // The file name where backtracking table is materialized
+
+    Batch outbatch;                 // Buffer page for output
+    Batch outbackbatch;             // Buffer page for backtracking batch
 
     Batch leftbatch;                // Buffer block for left input stream
     Batch rightbatch;               // Buffer page for right input stream
     Batch backbatch;                // Buffer page for backtrack input stream
 
     ObjectInputStream in;           // File pointer to the right hand materialized file
-    ObjectInputStream bin;          // File pointer to the backtracking file 
+    ObjectInputStream bin;          // File pointer to the backtracking file
     ObjectOutputStream bout;        // File pointer write to backtracking file;
 
     int lcurs;                      // Cursor for left side buffer
     int rcurs;                      // Cursor for right side buffer
-    int bcurs;                      // Cursor for backtracking buffer 
+    int bcurs;                      // Cursor for backtracking buffer
 
     boolean eosl;                   // Whether end of stream (left table) is reached
     boolean eosr;                   // Whether end of stream (right table) is reached
-    boolean eosb;                   // Whether end of stream (backtracking) is reached 
+    boolean eosb;                   // Whether end of stream (backtracking) is reached
     boolean sosl;                   // Signifies start of reading from stream (left table)
 
     int gotopointer;                // Find the minimum pointer for the right table
@@ -49,8 +52,13 @@ public class SortMergeJoin extends Join {
     int tuplestoclear;              // Number of tuples to clear in the incoming left batch
 
     Tuple prevtuple;                // To check if backtracking is needed
-    boolean isBacktracking;         // To check for the need of backtracking 
+    boolean isBacktracking;         // To check for the need of backtracking
 
+    /**
+     * Instantiates a new Sort merge join.
+     *
+     * @param jn the jn
+     */
     public SortMergeJoin(Join jn) {
         super(jn.getLeft(), jn.getRight(),
             jn.getConditionList(), jn.getOpType());
@@ -59,6 +67,10 @@ public class SortMergeJoin extends Join {
         numBuff = jn.getNumBuff();
     }
 
+    /**
+     *
+     * @return
+     */
     @Override
     public boolean open() {
         /** select number of tuples per batch/page **/
@@ -131,6 +143,10 @@ public class SortMergeJoin extends Join {
         return left.open();
     }
 
+    /**
+     *
+     * @return
+     */
     @Override
     public Batch next() {
         outbatch = new Batch(batchsize);
@@ -208,6 +224,10 @@ public class SortMergeJoin extends Join {
         return outbatch;
     }
 
+    /**
+     *
+     * @return
+     */
     @Override
     public boolean close() {
         File rf = new File(rfname);
@@ -217,6 +237,9 @@ public class SortMergeJoin extends Join {
         return left.close() && right.close();
     }
 
+    /**
+     *
+     */
     private void executeBacktrack() {
         try {
             while (!eosb) {
@@ -265,6 +288,9 @@ public class SortMergeJoin extends Join {
         }
     }
 
+    /**
+     *
+     */
     private void executeJoin() {
         try {
             while (!eosr) {
@@ -340,6 +366,10 @@ public class SortMergeJoin extends Join {
         }
     }
 
+    /**
+     *
+     * @return
+     */
     private boolean readNextLeftBatch() {
         /** new left page is to be fetched**/
         leftbatch = (Batch) left.next();
@@ -352,6 +382,9 @@ public class SortMergeJoin extends Join {
         return true; 
     }
 
+    /**
+     *
+     */
     private void readNextLeftTuple() {
         lcurs++;
         tuplestoclear--;
@@ -360,6 +393,9 @@ public class SortMergeJoin extends Join {
         } 
     }
 
+    /**
+     *
+     */
     private void initBacktrackingFile() {
         bfname = "B-SMJtemp-" + String.valueOf(filenum);
         try {

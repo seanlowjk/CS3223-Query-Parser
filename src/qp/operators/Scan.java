@@ -99,6 +99,10 @@ public class Scan extends Operator {
         return true;
     }
 
+    /**
+     *
+     * @return
+     */
     public Object clone() {
         String newtab = tabname;
         Scan newscan = new Scan(newtab, optype);

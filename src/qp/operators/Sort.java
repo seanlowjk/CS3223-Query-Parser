@@ -13,6 +13,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * The type Sort.
+ */
 public class Sort extends Operator {
     private static final String FILE_HEADER = "Stemp";
     private static int totalFileCounter = 0;
@@ -35,11 +38,12 @@ public class Sort extends Operator {
     /**
      * Creates the operator which represents the logic for Sorting.
      * The main algorithm used here is external sorting.
-     * @param base the base operator.
-     * @param attributes the attributes to compare by.
+     *
+     * @param base            the base operator.
+     * @param attributes      the attributes to compare by.
      * @param numberOfBuffers the number of buffers given for sorting.
-     * @param isDescending whether the tuples should be compared in descending order or not.
-     * @param type the type of operator used.
+     * @param isDescending    whether the tuples should be compared in descending order or not.
+     * @param type            the type of operator used.
      */
     public Sort(Operator base, List<Attribute> attributes, int numberOfBuffers, boolean isDescending, int type) {
         super(type);
@@ -59,6 +63,10 @@ public class Sort extends Operator {
         this.inputStream = null;
     }
 
+    /**
+     *
+     * @return
+     */
     @Override
     public boolean open() {
         if (!base.open()) {
@@ -72,6 +80,10 @@ public class Sort extends Operator {
         return retrieveInputStream();
     }
 
+    /**
+     *
+     * @return
+     */
     @Override
     public Batch next() {
         if (inputStream == null) {
@@ -81,6 +93,10 @@ public class Sort extends Operator {
         return BatchUtils.readBatch(inputStream);
     }
 
+    /**
+     *
+     * @return
+     */
     @Override
     public boolean close() {
         for (File originalRun : sortedRunsFiles) {
@@ -90,16 +106,28 @@ public class Sort extends Operator {
         return super.close();
     }
 
+    /**
+     *
+     * @return
+     */
     @Override
     public int getOpType() {
         return super.getOpType();
     }
 
+    /**
+     *
+     * @param schema
+     */
     @Override
     public void setSchema(Schema schema) {
         super.setSchema(schema);
     }
 
+    /**
+     *
+     * @return
+     */
     @Override
     public Object clone() {
         Operator clone = (Operator) base.clone();
@@ -108,10 +136,20 @@ public class Sort extends Operator {
         return newSort;
     }
 
+    /**
+     * Gets base.
+     *
+     * @return the base
+     */
     public Operator getBase() {
         return base;
     }
 
+    /**
+     * Sets base.
+     *
+     * @param base the base
+     */
     public void setBase(Operator base) {
         this.base = base;
     }
@@ -119,6 +157,10 @@ public class Sort extends Operator {
     /**
      * Returns the total I/O cost, which is represented by
      * 2 X |R| X numberOfPasses.
+     *
+     * @param numberOfPages   the number of pages
+     * @param numberOfBuffers the number of buffers
+     * @return the int
      */
     public static int calculateTotalIOCost(int numberOfPages, int numberOfBuffers) {
         return 2 * numberOfPages * calculateNumberOfPasses(numberOfPages, numberOfBuffers);
@@ -134,13 +176,18 @@ public class Sort extends Operator {
         return numPasses;
     }
 
+    /**
+     * Gets number of pages.
+     *
+     * @return the number of pages
+     */
     public int getNumberOfPages() {
         return this.numberOfPages;
     }
 
     /**
      * Sets the input stream for the next() operator to call on.
-     * Returns true if there are any errors, false otherwise.
+     * @return  true if there are any errors, false otherwise.
      */
     private boolean retrieveInputStream() {
         try {
