@@ -22,15 +22,16 @@ public class BlockNestedJoin extends Join {
     int batchsize;                  // Number of tuples per out batch
     ArrayList<Integer> leftindex;   // Indices of the join attributes in left table
     ArrayList<Integer> rightindex;  // Indices of the join attributes in right table
+    ArrayList<Condition> condList;  // List of conditions in the order of join conditions
     String rfname;                  // The file name where the right table is materialized
     Batch outbatch;                 // Buffer page for output
     ArrayList<Batch> leftBlock;     // Buffer block for left input stream
-    Batch leftbatch;                // Buffer page for left input stream 
+    Batch leftbatch;                // Buffer page for left input stream
     Batch rightbatch;               // Buffer page for right input stream
     ObjectInputStream in;           // File pointer to the right hand materialized file
 
     int lbatch;                     // Cursor for left side buffer for batch number
-    int lcurs;                      // Cursor for left side buffer for tuple number 
+    int lcurs;                      // Cursor for left side buffer for tuple number
     int rcurs;                      // Cursor for right side buffer
     boolean eosl;                   // Whether end of stream (left table) is reached
     boolean eosr;                   // Whether end of stream (right table) is reached
@@ -56,11 +57,13 @@ public class BlockNestedJoin extends Join {
         /** find indices attributes of join conditions **/
         leftindex = new ArrayList<>();
         rightindex = new ArrayList<>();
+        condList = new ArrayList<>();
         for (Condition con : conditionList) {
             Attribute leftattr = con.getLhs();
             Attribute rightattr = (Attribute) con.getRhs();
             leftindex.add(left.getSchema().indexOf(leftattr));
             rightindex.add(right.getSchema().indexOf(rightattr));
+            condList.add(con);
         }
         Batch rightpage;
 
@@ -153,12 +156,12 @@ public class BlockNestedJoin extends Join {
                             for (j = rcurs; j < rightbatch.size(); ++j) {
                                 Tuple lefttuple = leftbatch.get(i);
                                 Tuple righttuple = rightbatch.get(j);
-                                if (lefttuple.checkJoin(righttuple, leftindex, rightindex)) {
+                                if (lefttuple.checkJoin(righttuple, leftindex, rightindex, condList)) {
                                     Tuple outtuple = lefttuple.joinWith(righttuple);
                                     outbatch.add(outtuple);
                                     if (outbatch.isFull()) {
                                         if (i == leftbatch.size() - 1 && j == rightbatch.size() - 1) {  //case 1
-                                            lbatch = h + 1; 
+                                            lbatch = h + 1;
                                             lcurs = 0;
                                             rcurs = 0;
                                         } else if (i != leftbatch.size() - 1 && j == rightbatch.size() - 1) {  //case 2
@@ -218,7 +221,7 @@ public class BlockNestedJoin extends Join {
                 leftBuffer.add(leftBatch);
             }
         }
-        return leftBuffer; 
+        return leftBuffer;
     }
 
     /**
