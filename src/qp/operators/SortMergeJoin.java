@@ -220,6 +220,16 @@ public class SortMergeJoin extends Join {
     private void executeBacktrack() {
         try {
             while (!eosb) {
+                if (bin == null) {
+                    try {
+                        bin = new ObjectInputStream(new FileInputStream(bfname));
+                        eosb = false;
+                    } catch (IOException io) {
+                        System.err.println("SortMergeJoin: Error in reading the backtracking file");
+                        System.exit(1);
+                    }
+                }
+
                 if (backbatch == null || bcurs >= backbatch.size()) {
                     bcurs = 0;
                     backbatch = (Batch) bin.readObject();
