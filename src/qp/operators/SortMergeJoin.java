@@ -156,7 +156,6 @@ public class SortMergeJoin extends Join {
                 if (eosb) {
                     try {
                         bin = new ObjectInputStream(new FileInputStream(bfname));
-                        System.out.println(bin);
                         eosb = false;
                     } catch (IOException io) {
                         System.err.println("SortMergeJoin: Error in reading the backtracking file");
