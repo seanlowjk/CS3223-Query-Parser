@@ -21,16 +21,24 @@ public class SortMergeJoin extends Join {
     ArrayList<Integer> rightindex;  // Indices of the join attributes in right table
 
     String rfname;                  // The file name where the right table is materialized
+    String bfname;                  // The file name where backtracking table is materialized 
     
     Batch outbatch;                 // Buffer page for output 
     Batch leftbatch;                // Buffer block for left input stream
     Batch rightbatch;               // Buffer page for right input stream
-    ObjectInputStream in;          // File pointer to the right hand materialized file
+    Batch backbatch;                // Buffer page for backtrack input stream
+
+    ObjectInputStream in;           // File pointer to the right hand materialized file
+    ObjectInputStream bin;          // File pointer to the backtracking file 
+    ObjectOutputStream bout;        // File pointer write to backtracking file;
 
     int lcurs;                      // Cursor for left side buffer 
     int rcurs;                      // Cursor for right side buffer
+    int bcurs;                      // Cursor for backtracking buffer 
+
     boolean eosl;                   // Whether end of stream (left table) is reached
     boolean eosr;                   // Whether end of stream (right table) is reached
+    boolean eosb;                   // Whether end of stream (backtracking) is reached 
     boolean sosl;                   // Signifies start of reading from stream (left table)
 
     int gotopointer;                // Find the minimum pointer for the right table
@@ -40,6 +48,8 @@ public class SortMergeJoin extends Join {
     int backtrackpointer;
     int backtrackcurs;
     Tuple prevtuple; 
+
+    boolean isBacktracking; 
 
     public SortMergeJoin(Join jn) {
         super(jn.getLeft(), jn.getRight(),  
@@ -96,6 +106,7 @@ public class SortMergeJoin extends Join {
         backtrackpointer = 0;
         backtrackcurs = 0;
         prevtuple = null;
+        isBacktracking = false; 
 
         if (!right.open()) {
             return false;
@@ -135,12 +146,19 @@ public class SortMergeJoin extends Join {
                 }
             }
 
-            if (eosr) {
-                resetRightFile();
-                if (eosl) {
-                    return outbatch;
-                } else {
-                    if (sosl) {
+            if (isBacktracking) {
+                if (eosb) {
+                    try {
+                        bin = new ObjectInputStream(new FileInputStream(bfname));
+                        eosb = false;
+                    } catch (IOException io) {
+                        System.err.println("SortMergeJoin: Error in reading the backtracking file");
+                        System.exit(1);
+                    }
+
+                    if (eosl) {
+                        return outbatch;
+                    } else if (sosl) {
                         sosl = false;
                     } else {
                         readNextLeftTuple();
@@ -149,11 +167,37 @@ public class SortMergeJoin extends Join {
                             continue;
                         }
                     }
+                }
 
-
+                executeBacktrack();
+                if (lcurs >= leftbatch.size()) {
+                    lcurs = 0;
                 }
             }
-            getJoinBatch();
+
+            if (eosr) {
+                try {
+                    in = new ObjectInputStream(new FileInputStream(rfname));
+                    eosr = false;
+                } catch (IOException io) {
+                    System.err.println("SortMergeJoin: Error in reading the right file");
+                    System.exit(1);
+                }
+
+                if (eosl) {
+                    return outbatch;
+                } else if (sosl) {
+                    sosl = false;
+                } else {
+                    readNextLeftTuple();
+                    if (lcurs >= leftbatch.size()) {
+                        lcurs = 0; 
+                        continue;
+                    }
+                }
+            }
+
+            executeJoin();
             if (lcurs >= leftbatch.size()) {
                 lcurs = 0;
             }
@@ -168,7 +212,47 @@ public class SortMergeJoin extends Join {
         return left.close() && right.close();
     }
 
-    private void getJoinBatch() {
+    private void executeBacktrack() {
+        try {
+            while (!eosb) {
+                if (backbatch == null || bcurs >= backbatch.size()) {
+                    if (backbatch != null) {
+                        bcurs = 0;
+                    }
+                    backbatch = (Batch) bin.readObject();
+                }
+
+                while (bcurs < backbatch.size()) {
+                    Tuple lefttuple = leftbatch.get(lcurs);
+                    Tuple backtuple = backbatch.get(rcurs);
+                    if (lefttuple.checkJoin(backtuple, leftindex, rightindex)) {
+                        Tuple outtuple = lefttuple.joinWith(backtuple);
+                        outbatch.add(outtuple);
+                        bcurs++;
+                    } else {
+                        readNextLeftTuple();
+                        isBacktracking = false;
+                        return;
+                    }
+                }
+            }
+        } catch (EOFException e) {
+            try {
+                bin.close();
+            } catch (IOException io) {
+                System.out.println("SortMergeJoin: Error in reading temporary file");
+            }
+            eosb = true;
+        } catch (ClassNotFoundException c) {
+            System.out.println("SortMergeJoin: Error in deserialising temporary file ");
+            System.exit(1);
+        } catch (IOException io) {
+            System.out.println("SortMergeJoin: Error in reading temporary file");
+            System.exit(1);
+        }
+    }
+
+    private void executeJoin() {
         try {
             while (!eosr) {
                 if (rightbatch == null || rcurs >= rightbatch.size()) {
@@ -183,16 +267,17 @@ public class SortMergeJoin extends Join {
                     Tuple lefttuple = leftbatch.get(lcurs);
                     Tuple righttuple = rightbatch.get(rcurs);
                     if (lefttuple.checkJoin(righttuple, leftindex, rightindex)) {
-                        // Update the backtracker 
-                        if (prevtuple == null || !prevtuple.checkJoin(lefttuple, leftindex, leftindex)) {
-                            prevtuple = lefttuple;
-                            backtrackpointer = gotopointer;
-                            backtrackcurs = rcurs;
-                        }
-
                         Tuple outtuple = lefttuple.joinWith(righttuple);
                         outbatch.add(outtuple);
                         rcurs++;
+
+                        // If there is a condition to backtrack, initialize the backtracking file 
+                        if (prevtuple == null || !prevtuple.checkJoin(lefttuple, leftindex, leftindex)) {
+                            prevtuple = lefttuple;
+                            initBacktrackingFile();
+                        }
+                        bout.writeObject(righttuple);
+
                         if (outbatch.isFull()) {
                             return;
                         }
@@ -200,8 +285,13 @@ public class SortMergeJoin extends Join {
                         int comparisonfactor = Tuple.compareTuples(lefttuple, righttuple, leftindex, rightindex);
                         if (comparisonfactor > 0) {
                             rcurs++;
-                        } else { // comparisonfacotr < 0;
+                        } else { // comparisonfactor < 0;
                             readNextLeftTuple();
+                            if (isBacktracking) {
+                                bout.close(); 
+                                return; 
+                            }
+
                             if (lcurs >= leftbatch.size()) {
                                 return;
                             } else {
@@ -235,65 +325,26 @@ public class SortMergeJoin extends Join {
             return false;
         }
         tuplestoclear = leftbatch.size(); 
-
-        // Confirm with the backtracker 
         Tuple nexttuple = leftbatch.get(lcurs);
-        if (prevtuple != null && nexttuple.checkJoin(prevtuple, leftindex, leftindex)) {
-            try {
-                in.close();
-            } catch (IOException io) {
-                System.out.println("SortMergeJoin: Error in reading temporary file");
-            }
-            resetRightFile();
-        }
         return true; 
     }
 
     private void readNextLeftTuple() {
         lcurs++;
         tuplestoclear--;
-
         if (tuplestoclear == 0) {
             return;
         } 
-
-        // Confirm with the backtracker 
         Tuple nexttuple = leftbatch.get(lcurs);
-        if (prevtuple != null && nexttuple.checkJoin(prevtuple, leftindex, leftindex)) {
-            try {
-                in.close();
-            } catch (IOException io) {
-                System.out.println("SortMergeJoin: Error in reading temporary file");
-            }
-            resetRightFile();
-        }
     }
 
-    private void resetRightFile() {
-        // args[0] and args[1] return you the pointer you are supposed to backtrack to. 
-        gotopointer = backtrackpointer + backtrackcurs;
+    private void initBacktrackingFile() {
+        bfname = "B-SMJtemp-" + String.valueOf(filenum);
         try {
-            in = new ObjectInputStream(new FileInputStream(rfname));
-            eosr = false;
-
-            newrcurs = gotopointer;
-            while (newrcurs > 0) {
-                try {
-                    rightbatch = (Batch) in.readObject();
-                } catch (Exception e) {
-                    eosr = true;
-                    return;
-                }
-
-                if (newrcurs > rightbatch.size()) {
-                    newrcurs -= rightbatch.size();
-                } else {
-                    rcurs = newrcurs;
-                    break;
-                }
-            }
+            bout = new ObjectOutputStream(new FileOutputStream(bfname));
+            isBacktracking = true; 
         } catch (IOException io) {
-            System.err.println("SortMergeJoin: Error in reading the right file");
+            System.out.println("SortMergeJoin: Error writing to backtracking file");
             System.exit(1);
         }
     }
