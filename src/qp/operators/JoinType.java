@@ -18,8 +18,7 @@ public class JoinType {
     }
 
     public static int getValidJoinType(int type) {
-        // TODO: Remove Condition for BLOCKNESTED when implemented and merged. 
-        if (type == BLOCKNESTED || type == HASHJOIN) {
+        if (type == HASHJOIN) {
             return NESTEDJOIN;
         }
 
