@@ -12,6 +12,7 @@ import qp.parser.parser;
 import qp.utils.*;
 
 import java.io.*;
+import java.sql.Time;
 
 public class QueryMain {
 
@@ -31,29 +32,29 @@ public class QueryMain {
 
         if (sqlquery.isSetOperation()) {
             SQLQuery leftquery = sqlquery.getLeftQuery();
-            configureBufferManager(leftquery.getNumJoin(), leftquery.getNumOrder(), leftquery.isDistinct(), 
+            configureBufferManager(leftquery.getNumJoin(), leftquery.getNumOrder(), leftquery.isDistinct(),
                 leftquery.isGroupBy(), leftquery.isSetOperation(), args, in);
-        
+
             System.out.println("=================  left set operand ===================================");
             Operator leftroot = getQueryPlan(leftquery);
             System.out.println("==========  end of left set operand ===================================n");
 
             SQLQuery rightquery = sqlquery.getRightQuery();
-            configureBufferManager(rightquery.getNumJoin(), rightquery.getNumOrder(), rightquery.isDistinct(), 
+            configureBufferManager(rightquery.getNumJoin(), rightquery.getNumOrder(), rightquery.isDistinct(),
                 rightquery.isGroupBy(), rightquery.isSetOperation(), args, in);
-            
+
             System.out.println("================= right set operand ===================================");
             Operator rightroot = getQueryPlan(rightquery);
             System.out.println("========== end of right set operand ===================================n");
 
-            configureBufferManager(sqlquery.getNumJoin(), sqlquery.getNumOrder(),   
+            configureBufferManager(sqlquery.getNumJoin(), sqlquery.getNumOrder(),
                 sqlquery.isDistinct(), sqlquery.isGroupBy(), sqlquery.isSetOperation(), args, in);
 
             Operator root = getQueryPlan(sqlquery, leftroot, rightroot);
             printFinalPlan(root, args, in);
             executeQuery(root, args[1]);
         } else {
-            configureBufferManager(sqlquery.getNumJoin(), sqlquery.getNumOrder(),   
+            configureBufferManager(sqlquery.getNumJoin(), sqlquery.getNumOrder(),
                 sqlquery.isDistinct(), sqlquery.isGroupBy(), sqlquery.isSetOperation(), args, in);
 
             Operator root = getQueryPlan(sqlquery);
@@ -129,7 +130,7 @@ public class QueryMain {
             } else numBuff = Integer.parseInt(args[3]);
             BufferManager bm = new BufferManager(numBuff, numJoin);
         }
-        
+
         /** Check the number of buffers available is enough or not **/
         int numBuff = BufferManager.getBuffersPerJoin();
         if (numJoin > 0 && numBuff < 3) {
@@ -155,7 +156,7 @@ public class QueryMain {
         root = RandomOptimizer.makeExecPlan(planroot);
         if (RandomOptimizer.maxTupleSize > Batch.getPageSize()) {
             System.out.println("Cannot proceed with final plan.");
-            System.out.printf("Error: Minimum %d bytes per page.\nYou only have given %d bytes per page.\n", 
+            System.out.printf("Error: Minimum %d bytes per page.\nYou only have given %d bytes per page.\n",
                 RandomOptimizer.maxTupleSize, Batch.getPageSize());
             System.exit(1);
         }
@@ -246,6 +247,8 @@ public class QueryMain {
                 out.print(((Integer) data).intValue() + "\t");
             } else if (data instanceof Float) {
                 out.print(((Float) data).floatValue() + "\t");
+            } else if (data instanceof Time) {
+                out.print(((Time) data).getTime() + "\t");
             } else if (data == null) {
                 out.print("-NULL-\t");
             } else {
