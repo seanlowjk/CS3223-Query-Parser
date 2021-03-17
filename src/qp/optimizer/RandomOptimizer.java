@@ -6,13 +6,11 @@ package qp.optimizer;
 
 import qp.operators.*;
 import qp.utils.Attribute;
-import qp.utils.Batch;
 import qp.utils.Condition;
 import qp.utils.RandNumb;
 import qp.utils.SQLQuery;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class RandomOptimizer {
 
@@ -441,7 +439,7 @@ public class RandomOptimizer {
         } else if (node.getOpType() == OpType.PROJECT) {
             Operator base = ((Project) node).getBase();
             modifySchema(base);
-            ArrayList attrlist = ((Project) node).getProjAttr();
+            ArrayList<Attribute> attrlist = ((Project) node).getProjAttr();
             node.setSchema(base.getSchema().subSchema(attrlist));
         } else if (node.getOpType() == OpType.SORT) {
             Operator base = ((Sort) node).getBase();
@@ -450,7 +448,7 @@ public class RandomOptimizer {
         } else if (node.getOpType() == OpType.DISTINCT) {
             Operator base = ((Distinct) node).getBase();
             modifySchema(base);
-            ArrayList attrlist = ((Distinct) node).getProjAttr();
+            ArrayList<Attribute> attrlist = ((Distinct) node).getProjAttr();
             node.setSchema(base.getSchema().subSchema(attrlist));
         } else if (node.getOpType() == OpType.GROUPBY) {
             Operator base = ((GroupBy) node).getBase();
