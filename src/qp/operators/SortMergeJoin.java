@@ -179,7 +179,9 @@ public class SortMergeJoin extends Join {
                 if (lcurs >= leftbatch.size()) {
                     lcurs = 0;
                 }
-            }
+
+                continue;
+            } 
 
             if (eosr) {
                 try {
@@ -215,6 +217,8 @@ public class SortMergeJoin extends Join {
     public boolean close() {
         File rf = new File(rfname);
         rf.delete();
+        File bf = new File(bfname);
+        bf.delete();
         return left.close() && right.close();
     }
 
@@ -222,21 +226,20 @@ public class SortMergeJoin extends Join {
         try {
             while (!eosb) {
                 if (backbatch == null || bcurs >= backbatch.size()) {
-                    if (backbatch != null) {
-                        bcurs = 0;
-                    }
+                    bcurs = 0;
                     backbatch = (Batch) bin.readObject();
                 }
 
                 while (bcurs < backbatch.size()) {
                     Tuple lefttuple = leftbatch.get(lcurs);
-                    Tuple backtuple = backbatch.get(rcurs);
+                    Tuple backtuple = backbatch.get(bcurs);
                     if (lefttuple.checkJoin(backtuple, leftindex, rightindex)) {
                         Tuple outtuple = lefttuple.joinWith(backtuple);
                         outbatch.add(outtuple);
                         bcurs++;
                     } else {
                         readNextLeftTuple();
+                        rcurs ++;
                         isBacktracking = false;
                         eosb = true;
                         sosb = false; 
@@ -251,6 +254,7 @@ public class SortMergeJoin extends Join {
                 System.out.println("SortMergeJoin: Error in reading temporary file");
             }
             eosb = true;
+            System.out.printf("End: %s", leftbatch.get(lcurs)._data);
         } catch (ClassNotFoundException c) {
             System.out.println("SortMergeJoin: Error in deserialising temporary file ");
             System.exit(1);
@@ -292,6 +296,8 @@ public class SortMergeJoin extends Join {
                             outbackbatch = new Batch(batchsize);
                         }
 
+                        // End of initializing backtracking file. 
+
                         if (outbatch.isFull()) {
                             return;
                         }
@@ -302,6 +308,8 @@ public class SortMergeJoin extends Join {
                         } else { // comparisonfactor < 0;
                             readNextLeftTuple();
                             if (isBacktracking) {
+                                bout.writeObject(outbackbatch);
+                                outbackbatch = new Batch(batchsize);
                                 bout.close(); 
                                 eosb = true; 
                                 sosb = true;
@@ -351,7 +359,6 @@ public class SortMergeJoin extends Join {
         if (tuplestoclear == 0) {
             return;
         } 
-        Tuple nexttuple = leftbatch.get(lcurs);
     }
 
     private void initBacktrackingFile() {
