@@ -241,7 +241,6 @@ public class SortMergeJoin extends Join {
                         outbatch.add(outtuple);
                         bcurs++;
                     } else {
-                        // System.out.printf("Poof: %s %s\n", leftbatch.get(lcurs)._data, rightbatch.get(rcurs)._data);
                         isBacktracking = false;
                         eosb = true;
                         sosb = false; 
@@ -256,7 +255,6 @@ public class SortMergeJoin extends Join {
                 System.out.println("SortMergeJoin: Error in reading temporary file");
             }
             eosb = true;
-            // System.out.printf("End: %s", leftbatch.get(lcurs)._data);
         } catch (ClassNotFoundException c) {
             System.out.println("SortMergeJoin: Error in deserialising temporary file ");
             System.exit(1);
@@ -285,11 +283,7 @@ public class SortMergeJoin extends Join {
                         outbatch.add(outtuple);
                         rcurs++;
 
-                        // System.out.printf("Try: %s %s\n", lefttuple._data, righttuple._data);
-                        // System.out.printf("Try: %s %s\n", lefttuple._data, rightbatch.get(rcurs)._data);
-
-                        // If there is a condition to backtrack, initialize the backtracking file 
-                        if (prevtuple == null || !prevtuple.checkJoin(lefttuple, leftindex, leftindex, condList)) {
+                        if (prevtuple == null || Tuple.compareTuples(prevtuple, lefttuple, leftindex, leftindex) == 0) {
                             prevtuple = lefttuple;
                             outbackbatch = new Batch(batchsize);
                             initBacktrackingFile();
@@ -315,7 +309,6 @@ public class SortMergeJoin extends Join {
                                 bout.writeObject(outbackbatch);
                                 outbackbatch = new Batch(batchsize);
                                 bout.close(); 
-                                // System.out.printf("Go: %s %s\n", lefttuple._data, rightbatch.get(rcurs)._data);
                                 eosb = true; 
                                 sosb = true;
                                 return; 
