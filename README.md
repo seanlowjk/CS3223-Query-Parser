@@ -8,10 +8,16 @@ This repository contains code written as part of this project and is done by:
 - Low Jun Kai, Sean
 - Ng Xin Pei
 
+## Running the project
+1. Download the zip file.
+2. To set up the enviroment run `source queryenv` in terminal.
+3. Populate the database by running `bash populate_table.sh`
+4. The queries can be ran by `java QueryMain your_query.sql your_query_result.out`
+
 ## Modifications
 The following modifications to the original template was made by the team:
 
-- Block Nested Loops Join (qp.operators.BlockNestedJoin)
+- Block Nested Loop Join (qp.operators.BlockNestedJoin)
 - Sort Merge Join (qp.operators.SortMergeJoin)
 - The `DISTINCT` operator (qp.operators.Distinct)
 - The `ORDERBY` operator (qp.operators.Sort)
