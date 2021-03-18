@@ -14,7 +14,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 
 /**
- * Scan operator - read data from a file
+ * Scan operator - read data from a file.
  */
 public class Scan extends Operator {
 
@@ -38,7 +38,7 @@ public class Scan extends Operator {
     }
 
     /**
-     * Open file prepare a stream pointer to read input file
+     * Open file prepare a stream pointer to read input file.
      */
     public boolean open() {
         /** num of tuples per batch**/
@@ -55,7 +55,7 @@ public class Scan extends Operator {
     }
 
     /**
-     * Next operator - get a tuple from the file
+     * Next operator - get a tuple from the file.
      **/
     public Batch next() {
         /** The file reached its end and no more to read **/
@@ -100,8 +100,8 @@ public class Scan extends Operator {
     }
 
     /**
-     *
-     * @return
+     * Clones a copy of the Scan object
+     * @return new scan object
      */
     public Object clone() {
         String newtab = tabname;

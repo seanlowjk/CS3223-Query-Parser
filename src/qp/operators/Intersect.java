@@ -51,9 +51,9 @@ public class Intersect extends SetOperator {
     }
 
     /**
-     * During open finds the index of the set attributes
+     * During open finds the index of the set attributes.
      * * Materializes the right hand side into a file
-     * * Opens the connections
+     * * Opens the connections,
      **/
     @Override
     public boolean open() {
@@ -109,8 +109,9 @@ public class Intersect extends SetOperator {
     }
 
     /**
-     *
-     * @return
+     * The next batch of tuples in the
+     * intersection of left and right.
+     * @return Batch containing output tuples.
      */
     @Override
     public Batch next() {
@@ -215,10 +216,10 @@ public class Intersect extends SetOperator {
     }
 
     /**
-     * Generate left buffer queue.
+     * Generate left buffer block.
      *
-     * @return the queue
-     * @throws Exception the exception
+     * @return left block queue.
+     * @throws Exception the exception.
      */
     public Queue<Tuple> generateLeftBuffer() throws Exception {
         int numAvailableBuffers = numBuff - 2;
@@ -243,7 +244,7 @@ public class Intersect extends SetOperator {
     }
 
     /**
-     * Close the operator
+     * Close the base operator.
      */
     public boolean close() {
         File f = new File(rfname);
@@ -252,8 +253,8 @@ public class Intersect extends SetOperator {
     }
 
     /**
-     *
-     * @return
+     * Clones a new Intersect Object.
+     * @return a new Intersect object.
      */
     @Override
     public Object clone() {

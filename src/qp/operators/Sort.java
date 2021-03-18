@@ -14,7 +14,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * The type Sort.
+ * The Sort operator.
  */
 public class Sort extends Operator {
     private static final String FILE_HEADER = "Stemp";
@@ -64,8 +64,8 @@ public class Sort extends Operator {
     }
 
     /**
-     *
-     * @return
+     * Opens the base and calls relevant sorting methods.
+     * @return true if successfully open.
      */
     @Override
     public boolean open() {
@@ -81,8 +81,8 @@ public class Sort extends Operator {
     }
 
     /**
-     *
-     * @return
+     * Reads the next sorted batch.
+     * @return Batch.
      */
     @Override
     public Batch next() {
@@ -94,8 +94,8 @@ public class Sort extends Operator {
     }
 
     /**
-     *
-     * @return
+     * Deletes the files and closes the operator.
+     * @return true if successfully closed.
      */
     @Override
     public boolean close() {
@@ -107,8 +107,8 @@ public class Sort extends Operator {
     }
 
     /**
-     *
-     * @return
+     * Gets the operator type.
+     * @return operator type.
      */
     @Override
     public int getOpType() {
@@ -116,7 +116,7 @@ public class Sort extends Operator {
     }
 
     /**
-     *
+     * Sets schema.
      * @param schema
      */
     @Override
@@ -125,8 +125,8 @@ public class Sort extends Operator {
     }
 
     /**
-     *
-     * @return
+     * Clones a new Sort Object.
+     * @return new Sort Object.
      */
     @Override
     public Object clone() {

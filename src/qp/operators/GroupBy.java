@@ -20,7 +20,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * The type Group by.
+ * The Group By operator.
  */
 public class GroupBy extends Operator {
     // The base table to project
@@ -55,46 +55,47 @@ public class GroupBy extends Operator {
     }
 
     /**
-     * Gets base.
+     * Gets the base operator.
      *
-     * @return the base
+     * @return the base operator.
      */
     public Operator getBase() {
         return this.base;
     }
 
     /**
-     * Sets base.
+     * Sets the base operator.
      *
-     * @param base the base
+     * @param base the base operator.
      */
     public void setBase(Operator base) {
         this.base = base;
     }
 
     /**
-     * Gets proj attr.
+     * Gets attribute list.
      *
-     * @return the proj attr
+     * @return the attribute list.
      */
     public ArrayList<Attribute> getProjAttr() {
         return this.attrList;
     }
 
     /**
-     * Compare int.
+     * Compare tuples.
      *
-     * @param left  the left
-     * @param right the right
-     * @return the int
+     * @param left  the left tuple.
+     * @param right the right right.
+     * @return -1 if left < right,  0 if left = right and 1 if left > right
      */
     public int compare(Tuple left, Tuple right) {
         return comparator.compare(left, right);
     }
 
     /**
-     * Opens the connection to the base operator and identifies the attributes
-     * to be projected from the base operator.
+     * Opens the connection to the base operator
+     * and identifies the attributes to be projected
+     * from the base operator.
      */
     @Override
     public boolean open() {
@@ -143,8 +144,8 @@ public class GroupBy extends Operator {
     }
 
     /**
-     *
-     * @return
+     * Clones a Group By object.
+     * @return new Group By object.
      */
     @Override
     public Object clone() {

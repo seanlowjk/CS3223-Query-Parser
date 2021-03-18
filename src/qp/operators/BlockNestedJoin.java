@@ -15,7 +15,7 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 
 /**
- * The type Block nested join.
+ * Block Nested Join operator.
  */
 public class BlockNestedJoin extends Join {
 
@@ -40,7 +40,9 @@ public class BlockNestedJoin extends Join {
     /**
      * Instantiates a new Block nested join.
      *
-     * @param jn the jn
+     * @param jn generic Join operator that
+     *           carries information required
+     *           for joining.
      */
     public BlockNestedJoin(Join jn) {
         super(jn.getLeft(), jn.getRight(), jn.getConditionList(), jn.getOpType());
@@ -116,8 +118,8 @@ public class BlockNestedJoin extends Join {
     }
 
     /**
-     * from input buffers selects the tuples satisfying join condition
-     * * And returns a page of output tuples
+     * From input buffers selects the tuples satisfying join condition
+     * @return  a Batch object which is a page of output tuples
      **/
     @Override
     public Batch next() {
@@ -214,7 +216,7 @@ public class BlockNestedJoin extends Join {
     /**
      * Generate left buffer array list.
      *
-     * @return the array list
+     * @return arraylist of batches representing left buffer block.
      * @throws Exception the exception
      */
     public ArrayList<Batch> generateLeftBuffer() throws Exception {

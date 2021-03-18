@@ -15,7 +15,7 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 
 /**
- * The type Sort merge join.
+ * The Sort merge join operator.
  */
 public class SortMergeJoin extends Join {
     static int filenum = 0;         // To get unique filenum for this operation
@@ -57,7 +57,8 @@ public class SortMergeJoin extends Join {
     /**
      * Instantiates a new Sort merge join.
      *
-     * @param jn the jn
+     * @param jn the generic join operator containing
+     *           information required for join.
      */
     public SortMergeJoin(Join jn) {
         super(jn.getLeft(), jn.getRight(),
@@ -68,8 +69,9 @@ public class SortMergeJoin extends Join {
     }
 
     /**
-     *
-     * @return
+     * Opens connection to base operator
+     * and finds the condition list.
+     * @return true if successful open.
      */
     @Override
     public boolean open() {
@@ -144,8 +146,8 @@ public class SortMergeJoin extends Join {
     }
 
     /**
-     *
-     * @return
+     * Gets the next joined batch.
+     * @return Batch containing the joined tuples.
      */
     @Override
     public Batch next() {
@@ -225,8 +227,8 @@ public class SortMergeJoin extends Join {
     }
 
     /**
-     *
-     * @return
+     * Deletes files and closes left and right operator.
+     * @return true if succesfully closed.
      */
     @Override
     public boolean close() {
@@ -238,7 +240,7 @@ public class SortMergeJoin extends Join {
     }
 
     /**
-     *
+     * Backtracking on the left batch.
      */
     private void executeBacktrack() {
         try {
@@ -289,7 +291,7 @@ public class SortMergeJoin extends Join {
     }
 
     /**
-     *
+     * Sort Merge Join on the left and right buffer.
      */
     private void executeJoin() {
         try {
@@ -367,8 +369,8 @@ public class SortMergeJoin extends Join {
     }
 
     /**
-     *
-     * @return
+     * Reads in the left page from the block buffer.
+     * @return true for successful reading.
      */
     private boolean readNextLeftBatch() {
         /** new left page is to be fetched**/
@@ -383,7 +385,7 @@ public class SortMergeJoin extends Join {
     }
 
     /**
-     *
+     * Update the left tuple to be read next.
      */
     private void readNextLeftTuple() {
         lcurs++;
@@ -394,7 +396,7 @@ public class SortMergeJoin extends Join {
     }
 
     /**
-     *
+     * Materalise the right batches for future backtracking purposes.
      */
     private void initBacktrackingFile() {
         bfname = "B-SMJtemp-" + String.valueOf(filenum);
