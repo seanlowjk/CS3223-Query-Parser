@@ -198,35 +198,48 @@ public class RandomInitialPlan {
      * create join operators
      **/
     public void createJoinOp() {
-        BitSet bitCList = new BitSet(numJoin);
-        int jnnum = RandNumb.randInt(0, numJoin - 1);
         Join jn = null;
 
+        // Modify these few depending on what you need
+        int[] conditionOrder = new int[]{ 0, 1, 2, 3 };
+        int joinMeth = JoinType.SORTMERGE;
+        boolean shouldFlip = true; 
+        // End here 
+
+        int count = 0; 
         /** Repeat until all the join conditions are considered **/
-        while (bitCList.cardinality() != numJoin) {
+        while (count < conditionOrder.length) {
             /** If this condition is already consider chose
              ** another join condition
              **/
-            while (bitCList.get(jnnum)) {
-                jnnum = RandNumb.randInt(0, numJoin - 1);
-            }
-            Condition cn = (Condition) joinlist.get(jnnum);
+
+            int jnum = conditionOrder[count];
+
+            Condition cn = (Condition) joinlist.get(jnum);
             String lefttab = cn.getLhs().getTabName();
             String righttab = ((Attribute) cn.getRhs()).getTabName();
             Operator left = (Operator) tab_op_hash.get(lefttab);
             Operator right = (Operator) tab_op_hash.get(righttab);
             jn = new Join(left, right, cn, OpType.JOIN);
-            jn.setNodeIndex(jnnum);
+            jn.setNodeIndex(jnum);
             Schema newsche = left.getSchema().joinWith(right.getSchema());
             jn.setSchema(newsche);
 
             /** randomly select a join type**/
-            int numJMeth = JoinType.numJoinTypes();
-            int joinMeth = JoinType.getValidJoinType(RandNumb.randInt(0, numJMeth - 1));
+            if (shouldFlip) {
+                System.out.println(count);
+                if (count % 2 == 0) {
+                    joinMeth = JoinType.BLOCKNESTED;
+                } else {
+                    joinMeth = JoinType.SORTMERGE;
+                }
+            }
+            count++; 
+            System.out.println(count);
+
             jn.setJoinType(joinMeth);
             modifyHashtable(left, jn);
             modifyHashtable(right, jn);
-            bitCList.set(jnnum);
         }
 
         /** The last join operation is the root for the
