@@ -15,7 +15,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 /**
- * The type Project.
+ * The Project operator.
  */
 public class Project extends Operator {
 
@@ -25,7 +25,7 @@ public class Project extends Operator {
     int numOfBuffers;
 
     /**
-     * The following fields are requied during execution
+     * The following fields are required during execution
      * * of the Project Operator
      */
     Batch inbatch; //pts to the first batch in block

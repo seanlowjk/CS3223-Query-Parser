@@ -227,8 +227,8 @@ public class SortMergeJoin extends Join {
     }
 
     /**
-     *
-     * @return
+     * Deletes files and closes left and right operator.
+     * @return true if succesfully closed.
      */
     @Override
     public boolean close() {
