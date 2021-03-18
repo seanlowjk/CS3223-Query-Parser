@@ -234,8 +234,10 @@ public class SortMergeJoin extends Join {
     public boolean close() {
         File rf = new File(rfname);
         rf.delete();
-        File bf = new File(bfname);
-        bf.delete();
+        if (bf.exists()) {
+            File bf = new File(bfname);
+            bf.delete();
+        }
         return left.close() && right.close();
     }
 
