@@ -201,7 +201,7 @@ public class RandomInitialPlan {
         Join jn = null;
 
         // Modify these few depending on what you need
-        int[] conditionOrder = new int[]{ 0, 3, 1, 2 };
+        int[] conditionOrder = new int[]{ 3, 2, 0, 1 };
         int joinMeth = JoinType.SORTMERGE;
         boolean shouldFlip = true; 
         // End here 
