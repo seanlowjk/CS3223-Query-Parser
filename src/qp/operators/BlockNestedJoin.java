@@ -15,11 +15,7 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 
 /**
-<<<<<<< HEAD
  * Block Nested Join operator.
-=======
- * The type Block nested join.
->>>>>>> 28a86d99083e1d555a6bcf502f7ebe8b358c1d57
  */
 public class BlockNestedJoin extends Join {
 
