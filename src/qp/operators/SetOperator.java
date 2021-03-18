@@ -7,7 +7,7 @@ package qp.operators;
 import qp.utils.Schema;
 
 /**
- * The type Set operator.
+ * The Set operator.
  */
 public class SetOperator extends Operator {
 
@@ -19,9 +19,9 @@ public class SetOperator extends Operator {
     /**
      * Instantiates a new Set operator.
      *
-     * @param left  the left
-     * @param right the right
-     * @param type  the type
+     * @param left  the left operator
+     * @param right the right operator
+     * @param type  the type of set operation
      */
     public SetOperator(Operator left, Operator right, int type) {
         super(type);
@@ -35,80 +35,73 @@ public class SetOperator extends Operator {
     }
 
     /**
-     * Gets num buff.
-     *
-     * @return the num buff
+     * Gets number of available buffer.
+     * @return the number of available buffer.
      */
     public int getNumBuff() {
         return numBuff;
     }
 
     /**
-     * Sets num buff.
-     *
-     * @param num the num
+     * Sets number of available buffer.
+     * @param num, the number of available buffer.
      */
     public void setNumBuff(int num) {
         this.numBuff = num;
     }
 
     /**
-     * Gets left.
-     *
-     * @return the left
+     * Gets left operator.
+     * @return the left operator.
      */
     public Operator getLeft() {
         return left;
     }
 
     /**
-     * Sets left.
-     *
-     * @param left the left
+     * Sets left operator.
+     * @param left the left operator.
      */
     public void setLeft(Operator left) {
         this.left = left;
     }
 
     /**
-     * Gets right.
-     *
-     * @return the right
+     * Gets right operator.
+     * @return the right operator.
      */
     public Operator getRight() {
         return right;
     }
 
     /**
-     * Sets set op type.
-     *
-     * @param type the type
+     * Sets set operation type.
+     * @param type the set operation.
      */
     public void setSetOpType(int type) {
         setOpType = type;
     }
 
     /**
-     * Gets set opt tpe.
-     *
-     * @return the set opt tpe
+     * Gets set opt type.
+     * @return the set opt type.
      */
     public int getSetOptTpe() {
         return setOpType;
     }
 
     /**
-     * Sets right.
+     * Sets right operator.
      *
-     * @param right the right
+     * @param right the right operator.
      */
     public void setRight(Operator right) {
         this.right = right;
     }
 
     /**
-     *
-     * @return
+     * Clones a new Set operator.
+     * @return new SetOperator object.
      */
     public Object clone() {
         Operator newleft = (Operator) left.clone();

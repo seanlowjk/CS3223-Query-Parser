@@ -59,27 +59,27 @@ public class Project extends Operator {
     }
 
     /**
-     * Gets base.
+     * Gets base operator.
      *
-     * @return the base
+     * @return the base operator.
      */
     public Operator getBase() {
         return base;
     }
 
     /**
-     * Sets base.
+     * Sets base operator.
      *
-     * @param base the base
+     * @param base the base operator.
      */
     public void setBase(Operator base) {
         this.base = base;
     }
 
     /**
-     * Gets proj attr.
+     * Gets projection attribute list.
      *
-     * @return the proj attr
+     * @return the projection attribute list.
      */
     public ArrayList<Attribute> getProjAttr() {
         return attrset;
@@ -87,9 +87,9 @@ public class Project extends Operator {
 
 
     /**
-     * Opens the connection to the base operator
-     * * Also figures out what are the columns to be
-     * * projected from the base operator
+     * Opens the connection to the base operator.
+     * Generates the projection list.
+     * @return true if successful open of base, false otherwise.
      **/
     public boolean open() {
         /** set number of tuples per batch **/
@@ -123,7 +123,10 @@ public class Project extends Operator {
     }
 
     /**
-     * Read next tuple from operator
+     * Gets the next batch of result
+     * according to the projection list
+     * @return Batch containing tuples
+     * with projected values.
      */
     public Batch next() {
         if (end && buffer.isEmpty()) {
@@ -160,9 +163,9 @@ public class Project extends Operator {
     }
 
     /**
-     * Gen block boolean.
+     * Reads in (B-1) batches to form block.
      *
-     * @return the boolean
+     * @return true if successfully gem a block. false otherwise.
      */
     public boolean genBlock() {
         int numOfInputBuffers = numOfBuffers - 1;
@@ -188,7 +191,7 @@ public class Project extends Operator {
 
 
     /**
-     * Close the operator
+     * Close the base operator
      */
     public boolean close() {
         inbatch = null;
@@ -197,8 +200,8 @@ public class Project extends Operator {
     }
 
     /**
-     *
-     * @return
+     * Clone a new Project Object.
+     * @return a new Project Object.
      */
     public Object clone() {
         Operator newbase = (Operator) base.clone();

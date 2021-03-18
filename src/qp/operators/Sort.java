@@ -14,7 +14,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * The type Sort.
+ * The Sort operator.
  */
 public class Sort extends Operator {
     private static final String FILE_HEADER = "Stemp";

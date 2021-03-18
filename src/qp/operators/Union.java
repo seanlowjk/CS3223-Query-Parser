@@ -9,7 +9,7 @@ import qp.utils.Batch;
 
 
 /**
- * The type Union.
+ * The Union operator.
  */
 public class Union extends SetOperator {
     int batchsize;                  // Number of tuples per out batch
@@ -50,8 +50,8 @@ public class Union extends SetOperator {
     }
 
     /**
-     *
-     * @return
+     * Gets the next batch in the union table
+     * @return next output batch of tuples
      */
     @Override
     public Batch next() {
@@ -83,15 +83,15 @@ public class Union extends SetOperator {
     }
 
     /**
-     * Close the operator
+     * Close the base operators.
      */
     public boolean close() {
         return left.close() && right.close();
     }
 
     /**
-     *
-     * @return
+     * Clones a new Union object.
+     * @return a new Union object.
      */
     @Override
     public Object clone() {
