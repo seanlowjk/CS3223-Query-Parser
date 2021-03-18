@@ -30,12 +30,5 @@ The following modifications to the original template was made by the team:
 
 As part of the bonus tasks, the team have made the following additional modifications:
 
-<<<<<<< HEAD
 - The `INTERSECT` and `INTERSECT ALL` operators (qp.operators.Intersect)
 - The `UNION` and `UNION ALL` operators (qp.operators.Union)
-=======
-- The `INTERSECT`, `INTERSECT ALL`, `UNION `, `UNION ALL`  operator (qp.operators.Intersect)
->>>>>>> ab77366752c00d72cec96ad3cd035634e285995b
-- The `TIME` datatype
-
-
