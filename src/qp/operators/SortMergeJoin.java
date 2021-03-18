@@ -235,7 +235,9 @@ public class SortMergeJoin extends Join {
         File rf = new File(rfname);
         rf.delete();
         File bf = new File(bfname);
-        bf.delete();
+        if (bf.exists()) {
+            bf.delete();
+        }
         return left.close() && right.close();
     }
 
