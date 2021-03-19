@@ -49,8 +49,11 @@ public class SortMergeJoin extends Join {
 
     int tuplestoclear;              // Number of tuples to clear in the incoming left batch
 
-    Tuple prevtuple;                // To check if backtracking is needed
+    Tuple bftuple;                  // To check if reinstating the backtracing file is needed. 
+    int actualbend;                 // To keep track the number of tuples in the backtracking file
+    int actualbcurs;                // To keep track of the actual pointer in the backtracking file wrt # of tuples. 
     boolean isBacktracking;         // To check for the need of backtracking
+    boolean isInitDone;             // To check if the backtracking file is initialized finished. 
 
     /**
      * Instantiates a new Sort merge join.
@@ -121,8 +124,11 @@ public class SortMergeJoin extends Join {
         tuplestoclear = 0;
 
         /** for backtracking purposes */
-        prevtuple = null;
+        bftuple = null;
         isBacktracking = false; 
+        isInitDone = false;
+        actualbend = 0;
+        actualbcurs = 0;
 
         if (!right.open()) {
             return false;
@@ -169,7 +175,7 @@ public class SortMergeJoin extends Join {
             /**
              * If backtracking is needed, enter this loop here. 
              */
-            if (isBacktracking) {
+            if (isBacktracking && isInitDone) {
                 if (eosb) {
                     try {
                         /**
@@ -188,6 +194,17 @@ public class SortMergeJoin extends Join {
                         sosl = true;
                     } else {
                         readNextLeftTuple();
+                        /**
+                         * When a new left tuple is read, 
+                         * we would need to reinitialize the backtracking file once again. 
+                         */
+                        try {
+                            bin = new ObjectInputStream(new FileInputStream(bfname));
+                            eosb = false;
+                        } catch (IOException io) {
+                            System.err.println("SortMergeJoin: Error in reading the backtracking file");
+                            System.exit(1);
+                        } 
                         if (lcurs >= leftbatch.size()) {
                             lcurs = 0;
                             continue;
@@ -234,6 +251,7 @@ public class SortMergeJoin extends Join {
                 lcurs = 0;
             }
         }
+
         return outbatch;
     }
 
@@ -245,9 +263,11 @@ public class SortMergeJoin extends Join {
     public boolean close() {
         File rf = new File(rfname);
         rf.delete();
-        File bf = new File(bfname);
-        if (bf.exists()) {
-            bf.delete();
+        if (bfname != null) {
+            File bf = new File(bfname);
+            if (bf.exists()) {
+                bf.delete();
+            }
         }
         return left.close() && right.close();
     }
@@ -258,23 +278,23 @@ public class SortMergeJoin extends Join {
     private void executeBacktrack() {
         try {
             while (!eosb) {
-                /**
-                 * If the buffe file has not be prepared to be read, 
-                 * prepare it here. 
-                 */
-                if (bin == null) {
-                    try {
-                        bin = new ObjectInputStream(new FileInputStream(bfname));
-                        eosb = false;
-                    } catch (IOException io) {
-                        System.err.println("SortMergeJoin: Error in reading the backtracking file");
-                        System.exit(1);
-                    }
-                }
-
+                /** On a new batch, read a new one */
                 if (backbatch == null || bcurs >= backbatch.size()) {
                     bcurs = 0;
                     backbatch = (Batch) bin.readObject();
+                /** If a new tuple is read, reinstate the backtracking file */
+                } else if (actualbcurs >= actualbend || bftuple == null || Tuple.compareTuples(bftuple, leftbatch.get(lcurs), leftindex, leftindex) != 0) {
+                    try {
+                        bftuple = leftbatch.get(lcurs);
+                        bin = new ObjectInputStream(new FileInputStream(bfname));
+                        eosb = false;
+                        actualbcurs = 0;
+                        bcurs = 0;
+                        backbatch = (Batch) bin.readObject();
+                    } catch (IOException io) {
+                        System.err.println("SortMergeJoin: Error in reading the backtracking file");
+                        System.exit(1);
+                    } 
                 }
 
                 /**
@@ -288,6 +308,7 @@ public class SortMergeJoin extends Join {
                         Tuple outtuple = lefttuple.joinWith(backtuple);
                         outbatch.add(outtuple);
                         bcurs++;
+                        actualbcurs++;
                     } else {
                         isBacktracking = false;
                         eosb = true;
@@ -334,24 +355,37 @@ public class SortMergeJoin extends Join {
 
                         /**
                          * THe following conditions are used to initialize the backtracking file: 
-                         * 1) If the prevtuple is null, means this is the first join result 
-                         * 2) If the prevtuple has the same join attribute as the lefttuple, means backtracking is needed. 
+                         * If the next tuple has the same join attribute value, get ready to initialize 
+                         * the backtracking file. 
                          */
-                        if (prevtuple == null || Tuple.compareTuples(prevtuple, lefttuple, leftindex, leftindex) == 0) {
-                            prevtuple = lefttuple;
-                            outbackbatch = new Batch(batchsize);
-                            initBacktrackingFile();
-                        } 
-                        outbackbatch.add(righttuple);
-
-                        if (outbackbatch.isFull()) {
-                            bout.writeObject(outbackbatch);
-                            outbackbatch = new Batch(batchsize);
+                        if (!isBacktracking) {
+                            /**
+                             * If it is not the last batcg, check with the next tuple
+                             * and see if they are the same join attribute value
+                             */
+                            if (lcurs < leftbatch.size() - 1) {
+                                Tuple othertuple = leftbatch.get(lcurs + 1);
+                                if (Tuple.compareTuples(lefttuple, othertuple, leftindex, leftindex) == 0) {
+                                    outbackbatch = new Batch(batchsize);
+                                    actualbend = 0;
+                                    initBacktrackingFile();
+                                }
+                            /** Else, just simply create the backtracking file just in case. */
+                            } else {
+                                outbackbatch = new Batch(batchsize);
+                                actualbend = 0;
+                                initBacktrackingFile();
+                            }
                         }
 
-                        // End of initializing backtracking file. 
-                        if (outbatch.isFull()) {
-                            return;
+                        if (isBacktracking) {
+                            outbackbatch.add(righttuple);
+                            actualbend ++;
+                        } 
+            
+                        if (outbackbatch != null && outbackbatch.isFull()) {
+                            bout.writeObject(outbackbatch);
+                            outbackbatch = new Batch(batchsize);
                         }
                     } else {
                         int comparisonfactor = Tuple.compareTuples(lefttuple, righttuple, leftindex, rightindex);
@@ -359,6 +393,7 @@ public class SortMergeJoin extends Join {
                             rcurs++;
                         } else { // comparisonfactor < 0;
                             if (isBacktracking) {
+                                isInitDone = true; 
                                 bout.writeObject(outbackbatch);
                                 outbackbatch = new Batch(batchsize);
                                 eosb = true; 
@@ -427,6 +462,7 @@ public class SortMergeJoin extends Join {
         try {
             bout = new ObjectOutputStream(new FileOutputStream(bfname));
             isBacktracking = true; 
+            isInitDone = false;
         } catch (IOException io) {
             System.out.println("SortMergeJoin: Error writing to backtracking file");
             System.exit(1);
