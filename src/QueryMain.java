@@ -166,6 +166,12 @@ public class QueryMain {
         }
 
         root = RandomOptimizer.makeExecPlan(planroot);
+
+        /**
+         * If there maximum tuple size is greater than the batch size
+         * provided by the user, throw an error and exit the program, indicating
+         * the minimum number of bytes needed to be supplied by the user. 
+         */
         if (RandomOptimizer.maxTupleSize > Batch.getPageSize()) {
             System.out.println("Cannot proceed with final plan.");
             System.out.printf("Error: Minimum %d bytes per page.\nYou only have given %d bytes per page.\n",

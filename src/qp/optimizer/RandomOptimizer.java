@@ -48,6 +48,9 @@ public class RandomOptimizer {
      * * corresponding join operator implementation
      **/
     public static Operator makeExecPlan(Operator node) {
+        /**
+         * Update the maximum tuple size given the operator to be processed. 
+         */
         maxTupleSize = Math.max(node.getSchema().getTupleSize(), maxTupleSize);
         if (node.getOpType() == OpType.INTERSECT) {
             Operator left = (((SetOperator) node).getLeft());
