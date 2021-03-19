@@ -47,8 +47,6 @@ public class SortMergeJoin extends Join {
     boolean eosb;                   // Whether end of stream (backtracking) is reached
     boolean sosl;                   // Signifies start of reading from stream (left table)
 
-    int gotopointer;                // Find the minimum pointer for the right table
-    int newrcurs;                   // New right cursor for backtracking
     int tuplestoclear;              // Number of tuples to clear in the incoming left batch
 
     Tuple prevtuple;                // To check if backtracking is needed
@@ -96,10 +94,16 @@ public class SortMergeJoin extends Join {
             condList.add(con);
         }
 
+        /**
+         * Prepare the left operator for sorting. 
+         */
         Sort leftSort = new Sort(left, leftAttributes, numBuff, false, OpType.SORT);
         leftSort.setSchema(left.getSchema());
         setLeft(leftSort);
 
+        /**
+         * Prepare the right operator for sorting. 
+         */
         Sort rightSort = new Sort(right, rightAttributes, numBuff, false, OpType.SORT);
         rightSort.setSchema(right.getSchema());
         setRight(rightSort);
@@ -114,9 +118,6 @@ public class SortMergeJoin extends Join {
 
         sosl = false;
 
-        /** for traversing the right file for the algorithm */
-        gotopointer = 0;
-        newrcurs = 0;
         tuplestoclear = 0;
 
         /** for backtracking purposes */
@@ -165,9 +166,15 @@ public class SortMergeJoin extends Join {
                 }
             }
 
+            /**
+             * If backtracking is needed, enter this loop here. 
+             */
             if (isBacktracking) {
                 if (eosb) {
                     try {
+                        /**
+                         * Start reading from the buffer file. 
+                         */
                         bin = new ObjectInputStream(new FileInputStream(bfname));
                         eosb = false;
                     } catch (IOException io) {
@@ -188,6 +195,10 @@ public class SortMergeJoin extends Join {
                     }
                 }
 
+                /**
+                 * Execute the backtracking algorithm to produce
+                 * the necessary output tuples needed. 
+                 */
                 executeBacktrack();
                 if (lcurs >= leftbatch.size()) {
                     lcurs = 0;
@@ -247,6 +258,10 @@ public class SortMergeJoin extends Join {
     private void executeBacktrack() {
         try {
             while (!eosb) {
+                /**
+                 * If the buffe file has not be prepared to be read, 
+                 * prepare it here. 
+                 */
                 if (bin == null) {
                     try {
                         bin = new ObjectInputStream(new FileInputStream(bfname));
@@ -262,6 +277,10 @@ public class SortMergeJoin extends Join {
                     backbatch = (Batch) bin.readObject();
                 }
 
+                /**
+                 * Simply get all the resultant tuples while the 
+                 * backtracking cursor is not yet out of bounds. 
+                 */
                 while (bcurs < backbatch.size()) {
                     Tuple lefttuple = leftbatch.get(lcurs);
                     Tuple backtuple = backbatch.get(bcurs);
@@ -301,7 +320,6 @@ public class SortMergeJoin extends Join {
                 if (rightbatch == null || rcurs >= rightbatch.size()) {
                     if (rightbatch != null) {
                         rcurs = 0;
-                        gotopointer += rightbatch.size();
                     }
                     rightbatch = (Batch) in.readObject();
                 }
@@ -314,6 +332,11 @@ public class SortMergeJoin extends Join {
                         outbatch.add(outtuple);
                         rcurs++;
 
+                        /**
+                         * THe following conditions are used to initialize the backtracking file: 
+                         * 1) If the prevtuple is null, means this is the first join result 
+                         * 2) If the prevtuple has the same join attribute as the lefttuple, means backtracking is needed. 
+                         */
                         if (prevtuple == null || Tuple.compareTuples(prevtuple, lefttuple, leftindex, leftindex) == 0) {
                             prevtuple = lefttuple;
                             outbackbatch = new Batch(batchsize);
@@ -327,7 +350,6 @@ public class SortMergeJoin extends Join {
                         }
 
                         // End of initializing backtracking file. 
-
                         if (outbatch.isFull()) {
                             return;
                         }

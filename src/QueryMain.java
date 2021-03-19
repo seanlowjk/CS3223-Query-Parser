@@ -30,7 +30,13 @@ public class QueryMain {
 
         SQLQuery sqlquery = getSQLQuery(args[0]);
 
+        /**
+         * Checks if the sql query is a set operation. 
+         */
         if (sqlquery.isSetOperation()) {
+            /**
+             * Get the left query from the set operation and configure the query parameters. 
+             */
             SQLQuery leftquery = sqlquery.getLeftQuery();
             configureBufferManager(leftquery.getNumJoin(), leftquery.getNumOrder(), leftquery.isDistinct(),
                 leftquery.isGroupBy(), leftquery.isSetOperation(), args, in);
@@ -39,6 +45,9 @@ public class QueryMain {
             Operator leftroot = getQueryPlan(leftquery);
             System.out.println("==========  end of left set operand ===================================n");
 
+            /**
+             * Get the right query from the set operation and configure the query parameters. 
+             */
             SQLQuery rightquery = sqlquery.getRightQuery();
             configureBufferManager(rightquery.getNumJoin(), rightquery.getNumOrder(), rightquery.isDistinct(),
                 rightquery.isGroupBy(), rightquery.isSetOperation(), args, in);
@@ -47,6 +56,9 @@ public class QueryMain {
             Operator rightroot = getQueryPlan(rightquery);
             System.out.println("========== end of right set operand ===================================n");
 
+            /**
+             * Configure the main query based on the left, right operators and the set operation itself. 
+             */
             configureBufferManager(sqlquery.getNumJoin(), sqlquery.getNumOrder(),
                 sqlquery.isDistinct(), sqlquery.isGroupBy(), sqlquery.isSetOperation(), args, in);
 
@@ -154,6 +166,12 @@ public class QueryMain {
         }
 
         root = RandomOptimizer.makeExecPlan(planroot);
+
+        /**
+         * If there maximum tuple size is greater than the batch size
+         * provided by the user, throw an error and exit the program, indicating
+         * the minimum number of bytes needed to be supplied by the user. 
+         */
         if (RandomOptimizer.maxTupleSize > Batch.getPageSize()) {
             System.out.println("Cannot proceed with final plan.");
             System.out.printf("Error: Minimum %d bytes per page.\nYou only have given %d bytes per page.\n",

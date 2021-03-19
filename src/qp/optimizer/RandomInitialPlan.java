@@ -55,8 +55,17 @@ public class RandomInitialPlan {
      * @param operators additional operators provided if it's a set operation 
      **/
     public Operator prepareInitialPlan(Operator... operators) {
+        /**
+         * If there are child operators given, it MUST be 
+         * a set operation. 
+         */
         if (operators.length > 0) {
             createSetOp(operators);
+
+            /**
+             * A Distinct Operator is added if the set operation
+             * DOES NOT have an ALL keyword. 
+             */
             createDistinctOp();
             return root; 
         }
@@ -68,6 +77,11 @@ public class RandomInitialPlan {
             createJoinOp();
         }
 
+        /** 
+        * If there are not enough join conditions to 
+        * join all the tables, create cross product
+        * operators.  
+        */
         if (fromlist.size() > joinlist.size() + 1) {
             createProductOp();
         }
@@ -151,7 +165,9 @@ public class RandomInitialPlan {
     }
 
     /**
-     * create cross product operators 
+     * Create Cross Product Operators using Join Operators 
+     * if there are some tables not included in the 
+     * final result. 
      */
     public void createProductOp() {
         int jnnum = numJoin; 
@@ -167,8 +183,15 @@ public class RandomInitialPlan {
                 continue; 
             }
 
+            /**
+             * If there are no join conditions bewteen the 
+             * two operators, create a cross product operator.
+             */
             if (!leftOp.getSchema().checkCompat(op.getSchema())) {
-                System.out.printf("Product needed! %s and %s\n\n", leftTable, tableName);
+                /**
+                 * Cross Product Operator is the same as a Join operator
+                 * without any join conditions specified. 
+                 */
                 cp = new Join(leftOp, op, OpType.JOIN);
                 cp.setNodeIndex(jnnum);
                 Schema newsche = leftOp.getSchema().joinWith(op.getSchema());
@@ -254,6 +277,10 @@ public class RandomInitialPlan {
         root.setSchema(newSchema);
     }
 
+    /**
+     * Creates the set operator based on the child operators given 
+     * and the operator type needed. 
+     */
     public void createSetOp(Operator... operators) {
         Operator left = operators[0];
         Operator right = operators[1];

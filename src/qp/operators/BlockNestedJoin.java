@@ -137,6 +137,11 @@ public class BlockNestedJoin extends Join {
                     System.out.println(e.getMessage());
                     System.exit(1);
                 }
+
+                /**
+                 * If the new left page is empty, we have successfully
+                 * read in all the tuples from the left operator. 
+                 */
                 if (leftBlock.size() == 0) {
                     eosl = true;
                     return outbatch;
@@ -159,6 +164,9 @@ public class BlockNestedJoin extends Join {
                         rightbatch = (Batch) in.readObject();
                     }
                     for (h = lbatch; h < leftBlock.size(); ++h) {
+                        /**
+                         * Get the block from the left operator 
+                         */
                         leftbatch = leftBlock.get(h);
                         for (i = lcurs; i < leftbatch.size(); ++i) {
                             for (j = rcurs; j < rightbatch.size(); ++j) {
@@ -223,10 +231,17 @@ public class BlockNestedJoin extends Join {
         int numAvailableBuffers = numBuff - 2;
         ArrayList<Batch> leftBuffer = new ArrayList<>();
 
+        /**
+         * If it is the end of the left stream, return an 
+         * empty buffer. 
+         */
         if (eosl) {
             return leftBuffer;
         }
 
+        /**
+         * Fill in all the B-2 buffers when needed. 
+         */
         for (int i = 0; i < numAvailableBuffers; i++) {
             Batch leftBatch = left.next();
             if (leftBatch == null || leftBatch.isEmpty()) {

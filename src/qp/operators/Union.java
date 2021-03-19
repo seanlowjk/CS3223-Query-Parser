@@ -57,10 +57,18 @@ public class Union extends SetOperator {
     public Batch next() {
         outbatch = new Batch(batchsize);
 
+        /**
+         * The idea of this algorithm is such that we just
+         * simply retrieve all the tuples from the left and right 
+         * operators. This is for UNION ALL. 
+         */
         if (eosl && eosr) {
             return null;
         }
 
+        /**
+         * Retrieve all the left batches till there is none left. 
+         */
         while (!eosl) {
             Batch leftbatch = left.next();
             if (leftbatch == null) {
@@ -70,6 +78,9 @@ public class Union extends SetOperator {
             }
         }
 
+        /**
+         * Retrieve all the right batches till there is none left. 
+         */
         while (!eosr) {
             Batch rightbatch = right.next();
             if (rightbatch == null) {
