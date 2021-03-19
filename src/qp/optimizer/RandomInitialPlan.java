@@ -68,6 +68,11 @@ public class RandomInitialPlan {
             createJoinOp();
         }
 
+        /** 
+        * If there are not enough join conditions to 
+        * join all the tables, create cross product
+        * operators.  
+        */
         if (fromlist.size() > joinlist.size() + 1) {
             createProductOp();
         }
@@ -151,7 +156,9 @@ public class RandomInitialPlan {
     }
 
     /**
-     * create cross product operators 
+     * Create Cross Product Operators using Join Operators 
+     * if there are some tables not included in the 
+     * final result. 
      */
     public void createProductOp() {
         int jnnum = numJoin; 
@@ -167,8 +174,15 @@ public class RandomInitialPlan {
                 continue; 
             }
 
+            /**
+             * If there are no join conditions bewteen the 
+             * two operators, create a cross product operator.
+             */
             if (!leftOp.getSchema().checkCompat(op.getSchema())) {
-                System.out.printf("Product needed! %s and %s\n\n", leftTable, tableName);
+                /**
+                 * Cross Product Operator is the same as a Join operator
+                 * without any join conditions specified. 
+                 */
                 cp = new Join(leftOp, op, OpType.JOIN);
                 cp.setNodeIndex(jnnum);
                 Schema newsche = leftOp.getSchema().joinWith(op.getSchema());
