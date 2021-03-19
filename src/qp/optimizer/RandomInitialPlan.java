@@ -55,8 +55,17 @@ public class RandomInitialPlan {
      * @param operators additional operators provided if it's a set operation 
      **/
     public Operator prepareInitialPlan(Operator... operators) {
+        /**
+         * If there are child operators given, it MUST be 
+         * a set operation. 
+         */
         if (operators.length > 0) {
             createSetOp(operators);
+
+            /**
+             * A Distinct Operator is added if the set operation
+             * DOES NOT have an ALL keyword. 
+             */
             createDistinctOp();
             return root; 
         }
@@ -268,6 +277,10 @@ public class RandomInitialPlan {
         root.setSchema(newSchema);
     }
 
+    /**
+     * Creates the set operator based on the child operators given 
+     * and the operator type needed. 
+     */
     public void createSetOp(Operator... operators) {
         Operator left = operators[0];
         Operator right = operators[1];
