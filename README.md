@@ -31,11 +31,12 @@ The following modifications to the original template was made by the team:
 As part of the bonus tasks, the team have made the following additional modifications to set operations:
 - The INTERSECT and INTERSECT ALL operator (`qp.operators.Intersect`)
 - The UNION and UNION ALL operator (`qp.operators.Union`)
+- Changes were made to (`qp.optimizer.RandomInitialPlan`) and (`QueryMain`) such that the system supports the new set operators. 
 
 A new `TIME` data type was also implemented to support generating time based value.
 
 Bugs fixed:
 1. Cartesian product was not supported in the original implementation and has now been fixed by treating it as a special join operator with no join conditions. (`qp.optimizer.RandomInitialPlan`)
-2. Running the query engine with a smaller amount of bytes per page required would cause it to enter into an infinite loop. This is now fixed by checking if the number of bytes per page specified by the user is sufficiently large. (`QueryMain`)
+2. Running the query engine with a smaller amount of bytes per page required would cause it to enter into an infinite loop. This is now fixed by checking if the number of bytes per page specified by the user is sufficiently large. (`QueryMain`) and (`qp.optimizer.RandomOptimizer`)
 3. The join operator was not closed at the end of the execution and has now been fixed. (`qp.operators.NestedJoin`)
 4. The original nested join operator did not consider conditions with expressions other than the equality expression. This is now fixed by checking the conditions more appropriately based on the expression provided. (`qp.utils.Tuple`)
