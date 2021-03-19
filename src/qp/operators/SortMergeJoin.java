@@ -49,9 +49,9 @@ public class SortMergeJoin extends Join {
 
     int tuplestoclear;              // Number of tuples to clear in the incoming left batch
 
-    Tuple prevtuple;                // To check if backtracking is needed
-    int actualbend;                 // To check if 
-    int actualbcurs;
+    Tuple bftuple;                  // To check if reinstating the backtracing file is needed. 
+    int actualbend;                 // To keep track the number of tuples in the backtracking file
+    int actualbcurs;                // To keep track of the actual pointer in the backtracking file wrt # of tuples. 
     boolean isBacktracking;         // To check for the need of backtracking
     boolean isInitDone;             // To check if the backtracking file is initialized finished. 
 
@@ -124,7 +124,7 @@ public class SortMergeJoin extends Join {
         tuplestoclear = 0;
 
         /** for backtracking purposes */
-        prevtuple = null;
+        bftuple = null;
         isBacktracking = false; 
         isInitDone = false;
         actualbend = 0;
@@ -283,9 +283,9 @@ public class SortMergeJoin extends Join {
                     bcurs = 0;
                     backbatch = (Batch) bin.readObject();
                 /** If a new tuple is read, reinstate the backtracking file */
-                } else if (actualbcurs >= actualbend || prevtuple == null || Tuple.compareTuples(prevtuple, leftbatch.get(lcurs), leftindex, leftindex) != 0) {
+                } else if (actualbcurs >= actualbend || bftuple == null || Tuple.compareTuples(bftuple, leftbatch.get(lcurs), leftindex, leftindex) != 0) {
                     try {
-                        prevtuple = leftbatch.get(lcurs);
+                        bftuple = leftbatch.get(lcurs);
                         bin = new ObjectInputStream(new FileInputStream(bfname));
                         eosb = false;
                         actualbcurs = 0;
