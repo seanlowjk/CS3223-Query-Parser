@@ -75,13 +75,6 @@ mainquery ::= finalquery:s UNION finalquery:t
 			parser.query = r;
 			RESULT = r;
 		:} 
-		| finalquery:s INTERSECT ALL finalquery:t
-		{:
-			SQLQuery r = new SQLQuery(s, t);
-			r.setSetOperationType(OpType.INTERSECT);
-			parser.query = r;
-			RESULT = r;
-		:} 
 		| finalquery:s 
 		{:
 			parser.query = s;
