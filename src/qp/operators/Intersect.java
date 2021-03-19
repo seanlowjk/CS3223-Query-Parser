@@ -156,13 +156,16 @@ public class Intersect extends SetOperator {
                 System.out.println(e.getMessage());
                 System.exit(1);
             }
+            // Gets the batch from the set operation. 
             getSetBatch();
         }
         return outbatch;
     }
 
     /**
-     * Gets set batch.
+     * Retrieves the next batch from the Intersect Operator. 
+     * Do note that the main algorithm used here is BLock Nested Loop 
+     * Join. 
      */
     public void getSetBatch() {
         try {
